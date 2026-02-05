@@ -2,6 +2,8 @@
 
 A browser-based WebGL shader composer with a modular effect system, real-time preview, and export to standalone TypeScript or HTML.
 
+**Live demo:** [https://olzn.github.io/shader-tool/](https://olzn.github.io/shader-tool/)
+
 ## Features
 
 - **Modular effects** — Build shaders by combining self-contained effect blocks (generators, post-processing, UV transforms)
