@@ -1,18 +1,13 @@
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter } from '@codemirror/view';
+import { defaultKeymap } from '@codemirror/commands';
 import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 
-interface CodeEditorOptions {
-  initialSource: string;
-  onChange: (source: string) => void;
-}
-
 export function createCodeEditor(
   container: HTMLElement,
-  options: CodeEditorOptions
+  options: { initialSource: string }
 ): {
   setSource: (source: string) => void;
   getSource: () => string;
@@ -20,7 +15,6 @@ export function createCodeEditor(
   destroy: () => void;
   view: EditorView;
 } {
-  // Build the editor container structure
   container.innerHTML = '';
 
   const dragHandle = document.createElement('div');
@@ -29,7 +23,7 @@ export function createCodeEditor(
 
   const editorHeader = document.createElement('div');
   editorHeader.className = 'editor-header';
-  editorHeader.innerHTML = `<span class="editor-header-label">Fragment Shader</span>`;
+  editorHeader.innerHTML = `<span class="editor-header-label">Composed GLSL (Read-only)</span>`;
 
   const errorOverlay = document.createElement('div');
   errorOverlay.className = 'preview-error';
@@ -44,32 +38,17 @@ export function createCodeEditor(
 
   container.append(dragHandle, editorHeader, errorOverlay, editorContent);
 
-  // Debounce
-  let debounceTimer: number | null = null;
-  let internalUpdate = false;
-
-  const updateListener = EditorView.updateListener.of((update) => {
-    if (update.docChanged && !internalUpdate) {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(() => {
-        options.onChange(update.state.doc.toString());
-      }, 300);
-    }
-  });
-
   const state = EditorState.create({
     doc: options.initialSource,
     extensions: [
       lineNumbers(),
-      highlightActiveLine(),
       highlightActiveLineGutter(),
-      history(),
       bracketMatching(),
-      javascript(), // C-like syntax for GLSL
+      javascript(),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       oneDark,
-      keymap.of([...defaultKeymap, ...historyKeymap]),
-      updateListener,
+      keymap.of([...defaultKeymap]),
+      EditorState.readOnly.of(true),
       EditorView.theme({
         '&': { height: '100%', fontSize: '12px' },
         '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)' },
@@ -91,11 +70,9 @@ export function createCodeEditor(
     setSource(source: string) {
       const current = view.state.doc.toString();
       if (current === source) return;
-      internalUpdate = true;
       view.dispatch({
         changes: { from: 0, to: current.length, insert: source },
       });
-      internalUpdate = false;
     },
 
     getSource(): string {
@@ -114,7 +91,6 @@ export function createCodeEditor(
     },
 
     destroy() {
-      if (debounceTimer) clearTimeout(debounceTimer);
       view.destroy();
     },
   };

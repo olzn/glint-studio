@@ -42,11 +42,11 @@ class Store {
     try {
       const data = {
         shaderName: this.state.shaderName,
-        activeTemplateId: this.state.activeTemplateId,
-        vertexSource: this.state.vertexSource,
-        fragmentSource: this.state.fragmentSource,
-        params: this.state.params,
+        activePresetId: this.state.activePresetId,
+        activeEffects: this.state.activeEffects,
         paramValues: this.state.paramValues,
+        colorA: this.state.colorA,
+        colorB: this.state.colorB,
         exportFunctionName: this.state.exportFunctionName,
         usesTexture: this.state.usesTexture,
         vertexType: this.state.vertexType,
@@ -62,7 +62,10 @@ class Store {
     try {
       const raw = localStorage.getItem(AUTOSAVE_KEY);
       if (!raw) return null;
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+      // Validate it has the new shape (activeEffects array)
+      if (!Array.isArray(data.activeEffects)) return null;
+      return data;
     } catch {
       return null;
     }

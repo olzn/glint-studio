@@ -1,9 +1,10 @@
-import type { AppState, UniformValue, CompileError } from './types';
+import type { AppState, ActiveEffect, UniformValue } from './types';
 import { Store } from './state';
 import { Renderer } from './renderer';
-import { preprocessAnnotated, detectUniforms } from './compiler';
-import { syncUniforms, defaultParamValues } from './uniforms';
-import { templates, getTemplate, swirlTemplate } from './templates/index';
+import { compose, generateInstanceId, VERTEX_SOURCE } from './composer';
+import { getEffect } from './effects/index';
+import { presets, getPreset } from './presets';
+import { syncUniforms, syncColors } from './uniforms';
 import { createLayout } from './ui/layout';
 import { createSidebar } from './ui/sidebar';
 import { createTimeControls } from './ui/time-controls';
@@ -14,27 +15,26 @@ import { bakeShader } from './export/bake';
 import { generateTS } from './export/generate-ts';
 import { generateHTML } from './export/generate-html';
 
-// --- Initialize with default template ---
-const defaultTemplate = swirlTemplate;
-const defaultValues = defaultParamValues(defaultTemplate.params);
+// --- Initialize with blank preset ---
+const blankPreset = getPreset('blank')!;
 
 const initialState: AppState = {
-  activeTemplateId: defaultTemplate.id,
-  shaderName: defaultTemplate.name,
-  vertexSource: defaultTemplate.vertexSource,
-  fragmentSource: defaultTemplate.fragmentSource,
+  shaderName: blankPreset.name,
+  activePresetId: blankPreset.id,
+  activeEffects: [],
+  paramValues: {},
+  colorA: blankPreset.colorA!,
+  colorB: blankPreset.colorB!,
   compiledFragmentSource: '',
-  params: defaultTemplate.params,
-  paramValues: defaultValues,
   editorOpen: false,
   editorHeight: 250,
   playing: true,
   timeScale: 1,
   compileErrors: [],
-  exportFunctionName: defaultTemplate.exportFunctionName,
-  usesTexture: defaultTemplate.usesTexture,
-  vertexType: defaultTemplate.vertexType,
-  exportAsync: defaultTemplate.exportAsync,
+  exportFunctionName: 'renderShader',
+  usesTexture: false,
+  vertexType: 'simple',
+  exportAsync: false,
 };
 
 // Try to restore autosave
@@ -52,65 +52,47 @@ const layout = createLayout(app);
 // --- Renderer ---
 const renderer = new Renderer(layout.preview);
 
-// --- Error overlay on preview (visible when editor is closed) ---
+// --- Error overlay on preview ---
 const previewErrorOverlay = document.createElement('div');
 previewErrorOverlay.className = 'preview-error';
 previewErrorOverlay.style.display = 'none';
 layout.preview.appendChild(previewErrorOverlay);
 
-// --- Compile and render current shader ---
-function compileCurrentShader(): void {
+// --- Code editor (declared early so composeAndCompile can reference it) ---
+let codeEditor: ReturnType<typeof createCodeEditor> | null = null;
+
+// --- Compose and compile ---
+function composeAndCompile(): void {
   const state = store.getState();
-  const { fragmentSource, params } = state;
+  const result = compose(state.activeEffects);
 
-  // Check if source has annotations
-  const hasAnnotations = /\/\*@\w+:\w+\*\//.test(fragmentSource);
-
-  let compiledFragment: string;
-  let activeParams = params;
-
-  if (hasAnnotations) {
-    const result = preprocessAnnotated(fragmentSource, params);
-    compiledFragment = result.glsl;
-    activeParams = result.params;
-  } else {
-    compiledFragment = fragmentSource;
-    // Auto-detect uniforms from raw GLSL
-    const detected = detectUniforms(fragmentSource);
-    if (detected.length > 0 && params.length === 0) {
-      activeParams = detected;
-    }
-  }
-
-  const errors = renderer.compile(state.vertexSource, compiledFragment);
+  const errors = renderer.compile(VERTEX_SOURCE, result.glsl);
 
   if (errors) {
     store.setState({
       compileErrors: errors,
-      compiledFragmentSource: compiledFragment,
+      compiledFragmentSource: result.glsl,
     });
   } else {
-    // Sync params if they changed
-    const paramValues = { ...state.paramValues };
-    for (const p of activeParams) {
-      if (!(p.id in paramValues)) {
-        paramValues[p.id] = p.defaultValue;
-      }
-    }
-
     store.setState({
       compileErrors: [],
-      compiledFragmentSource: compiledFragment,
-      params: activeParams,
-      paramValues,
+      compiledFragmentSource: result.glsl,
     });
 
-    syncUniforms(renderer, activeParams, paramValues);
+    // Sync all uniforms
+    syncColors(renderer, state.colorA, state.colorB);
+    syncUniforms(renderer, result.params, state.paramValues);
+  }
+
+  // Update code editor if open
+  if (codeEditor) {
+    codeEditor.setSource(result.glsl);
+    codeEditor.setErrors(store.getState().compileErrors);
   }
 }
 
 // Initial compile
-compileCurrentShader();
+composeAndCompile();
 
 // --- Shader name input ---
 const nameInput = document.createElement('input');
@@ -161,22 +143,15 @@ saveBtn.title = 'Save shader (Ctrl+S)';
 saveBtn.addEventListener('click', handleSave);
 layout.headerRight.appendChild(saveBtn);
 
-// --- Code editor ---
-let codeEditor: ReturnType<typeof createCodeEditor> | null = null;
-
+// --- Code editor helpers ---
 function initEditor(): ReturnType<typeof createCodeEditor> {
   const state = store.getState();
   const editor = createCodeEditor(layout.editorContainer, {
-    initialSource: state.fragmentSource,
-    onChange(source) {
-      store.setState({ fragmentSource: source });
-      compileCurrentShader();
-    },
+    initialSource: state.compiledFragmentSource,
   });
   return editor;
 }
 
-// Lazy init editor
 function ensureEditor(): ReturnType<typeof createCodeEditor> {
   if (!codeEditor) {
     codeEditor = initEditor();
@@ -192,63 +167,150 @@ function toggleEditor(): void {
   if (isOpen) {
     layout.editorContainer.classList.remove('collapsed');
     const editor = ensureEditor();
-    editor.setSource(store.getState().fragmentSource);
+    editor.setSource(store.getState().compiledFragmentSource);
     editor.setErrors(store.getState().compileErrors);
   } else {
     layout.editorContainer.classList.add('collapsed');
   }
 }
 
-// --- Per-template param value cache ---
-const templateValueCache: Record<string, Record<string, import('./types').UniformValue>> = {};
+// --- Helper: load a preset ---
+function loadPreset(presetId: string): void {
+  const preset = getPreset(presetId);
+  if (!preset) return;
+
+  // Build active effects from preset
+  const activeEffects: ActiveEffect[] = [];
+  const paramValues: Record<string, UniformValue> = {};
+
+  for (const { blockId } of preset.effects) {
+    const block = getEffect(blockId);
+    if (!block) continue;
+
+    const instanceId = generateInstanceId();
+    activeEffects.push({ instanceId, blockId, enabled: true });
+
+    // Set default values, then apply overrides
+    for (const param of block.params) {
+      const scopedId = `${instanceId}_${param.id}`;
+      const overrideKey = `${blockId}.${param.id}`;
+      paramValues[scopedId] = preset.paramOverrides[overrideKey] ?? param.defaultValue;
+    }
+  }
+
+  store.setState({
+    activePresetId: preset.id,
+    shaderName: preset.name,
+    activeEffects,
+    paramValues,
+    colorA: preset.colorA ?? '#211961',
+    colorB: preset.colorB ?? '#f99251',
+  });
+
+  nameInput.value = preset.name;
+  composeAndCompile();
+
+  const state = store.getState();
+  const result = compose(state.activeEffects);
+  sidebar.updateEffects(state.activeEffects, result.params, state.paramValues);
+  sidebar.updateColors(state.colorA, state.colorB);
+  sidebar.updatePreset(preset.id);
+
+  // Re-sync uniforms after compose
+  syncColors(renderer, state.colorA, state.colorB);
+  syncUniforms(renderer, result.params, state.paramValues);
+}
+
+// --- Helper: add an effect ---
+function addEffect(blockId: string): void {
+  const block = getEffect(blockId);
+  if (!block) return;
+
+  const state = store.getState();
+  const instanceId = generateInstanceId();
+  const activeEffects = [...state.activeEffects, { instanceId, blockId, enabled: true }];
+
+  // Set defaults for new effect's params
+  const paramValues = { ...state.paramValues };
+  for (const param of block.params) {
+    paramValues[`${instanceId}_${param.id}`] = param.defaultValue;
+  }
+
+  store.setState({ activeEffects, paramValues, activePresetId: null });
+  composeAndCompile();
+  refreshSidebar();
+}
+
+// --- Helper: remove an effect ---
+function removeEffect(instanceId: string): void {
+  const state = store.getState();
+  const activeEffects = state.activeEffects.filter(ae => ae.instanceId !== instanceId);
+
+  // Clean up param values for removed effect
+  const paramValues = { ...state.paramValues };
+  for (const key of Object.keys(paramValues)) {
+    if (key.startsWith(instanceId + '_')) {
+      delete paramValues[key];
+    }
+  }
+
+  store.setState({ activeEffects, paramValues, activePresetId: null });
+  composeAndCompile();
+  refreshSidebar();
+}
+
+// --- Helper: toggle effect enabled ---
+function toggleEffect(instanceId: string, enabled: boolean): void {
+  const state = store.getState();
+  const activeEffects = state.activeEffects.map(ae =>
+    ae.instanceId === instanceId ? { ...ae, enabled } : ae
+  );
+  store.setState({ activeEffects, activePresetId: null });
+  composeAndCompile();
+  refreshSidebar();
+}
+
+// --- Helper: refresh sidebar after state changes ---
+function refreshSidebar(): void {
+  const state = store.getState();
+  const result = compose(state.activeEffects);
+  sidebar.updateEffects(state.activeEffects, result.params, state.paramValues);
+  syncColors(renderer, state.colorA, state.colorB);
+  syncUniforms(renderer, result.params, state.paramValues);
+}
 
 // --- Sidebar ---
 const sidebar = createSidebar(layout.sidebar, {
-  templates,
-  activeTemplateId: store.getState().activeTemplateId,
-  params: store.getState().params,
+  presets,
+  activePresetId: store.getState().activePresetId,
+  activeEffects: store.getState().activeEffects,
+  params: compose(store.getState().activeEffects).params,
   paramValues: store.getState().paramValues,
+  colorA: store.getState().colorA,
+  colorB: store.getState().colorB,
   savedShaders: loadSavedShaders(),
-  onTemplateSelect(id) {
-    const tmpl = getTemplate(id);
-    if (!tmpl) return;
-
-    // Save current param values before switching
-    const currentState = store.getState();
-    if (currentState.activeTemplateId) {
-      templateValueCache[currentState.activeTemplateId] = { ...currentState.paramValues };
-    }
-
-    // Restore cached values or use defaults
-    const cached = templateValueCache[tmpl.id];
-    const values = cached ?? defaultParamValues(tmpl.params);
-
-    store.setState({
-      activeTemplateId: tmpl.id,
-      shaderName: tmpl.name,
-      vertexSource: tmpl.vertexSource,
-      fragmentSource: tmpl.fragmentSource,
-      params: tmpl.params,
-      paramValues: values,
-      exportFunctionName: tmpl.exportFunctionName,
-      usesTexture: tmpl.usesTexture,
-      vertexType: tmpl.vertexType,
-      exportAsync: tmpl.exportAsync,
-    });
-    nameInput.value = tmpl.name;
-    compileCurrentShader();
-    sidebar.updateParams(tmpl.params, values);
-    sidebar.updateActiveTemplate(tmpl.id);
-    exportPanel.updateFunctionName(tmpl.exportFunctionName);
-    if (codeEditor) {
-      codeEditor.setSource(tmpl.fragmentSource);
-    }
+  onPresetSelect(id) {
+    loadPreset(id);
+  },
+  onColorChange(which, value) {
+    store.setState({ [which]: value, activePresetId: null });
+    syncColors(renderer, store.getState().colorA, store.getState().colorB);
   },
   onParamChange(paramId, value) {
     const state = store.getState();
     const newValues = { ...state.paramValues, [paramId]: value };
-    store.setState({ paramValues: newValues });
-    syncUniforms(renderer, state.params, newValues);
+    store.setState({ paramValues: newValues, activePresetId: null });
+    const result = compose(state.activeEffects);
+    syncUniforms(renderer, result.params, newValues);
+  },
+  onAddEffect(blockId) {
+    addEffect(blockId);
+  },
+  onRemoveEffect(instanceId) {
+    removeEffect(instanceId);
+  },
+  onToggleEffect(instanceId, enabled) {
+    toggleEffect(instanceId, enabled);
   },
   onSave: handleSave,
   onLoadSaved(id) {
@@ -256,15 +318,12 @@ const sidebar = createSidebar(layout.sidebar, {
     if (!saved) return;
     const partial = savedShaderToState(saved);
     store.setState(partial);
-    compileCurrentShader();
+    composeAndCompile();
     const state = store.getState();
     nameInput.value = state.shaderName;
-    sidebar.updateParams(state.params, state.paramValues);
-    sidebar.updateActiveTemplate(state.activeTemplateId);
+    refreshSidebar();
+    sidebar.updatePreset(state.activePresetId);
     exportPanel.updateFunctionName(state.exportFunctionName);
-    if (codeEditor) {
-      codeEditor.setSource(state.fragmentSource);
-    }
   },
   onDeleteSaved(id) {
     deleteSavedShader(id);
@@ -288,18 +347,19 @@ const exportPanel = createExportPanel(layout.sidebar, {
 
 function doExport(format: 'ts' | 'html'): void {
   const state = store.getState();
+  const result = compose(state.activeEffects);
 
-  // Bake the compiled fragment source
+  // Bake: replace uniforms with literal values
   const bakedFragment = bakeShader(
-    state.compiledFragmentSource,
-    state.params,
+    result.glsl,
+    result.params,
     state.paramValues
   );
 
   if (format === 'ts') {
     const content = generateTS({
       functionName: state.exportFunctionName,
-      vertexSource: state.vertexSource,
+      vertexSource: VERTEX_SOURCE,
       fragmentSource: bakedFragment,
       usesTexture: state.usesTexture,
       exportAsync: state.exportAsync,
@@ -308,13 +368,13 @@ function doExport(format: 'ts' | 'html'): void {
   } else {
     const content = generateHTML({
       functionName: state.exportFunctionName,
-      vertexSource: state.vertexSource,
+      vertexSource: VERTEX_SOURCE,
       fragmentSource: bakedFragment,
       usesTexture: state.usesTexture,
       exportAsync: state.exportAsync,
       title: state.shaderName,
     });
-    downloadFile(content, `test.html`, 'text/html');
+    downloadFile(content, `${state.shaderName || 'shader'}.html`, 'text/html');
   }
 }
 
@@ -335,17 +395,11 @@ function downloadFile(content: string, filename: string, mimeType: string): void
 
 // --- State subscriptions ---
 store.subscribe((state, prev) => {
-  // Sync uniforms on param changes
-  if (state.paramValues !== prev.paramValues) {
-    syncUniforms(renderer, state.params, state.paramValues);
-  }
-
   // Update error overlays
   if (state.compileErrors !== prev.compileErrors) {
     if (codeEditor) {
       codeEditor.setErrors(state.compileErrors);
     }
-    // Show errors on preview overlay
     if (state.compileErrors.length > 0) {
       previewErrorOverlay.style.display = 'block';
       previewErrorOverlay.textContent = state.compileErrors
@@ -359,17 +413,14 @@ store.subscribe((state, prev) => {
 
 // --- Keyboard shortcuts ---
 document.addEventListener('keydown', (e) => {
-  // Ctrl+E: toggle editor
   if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
     e.preventDefault();
     toggleEditor();
   }
-  // Ctrl+S: save
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
     handleSave();
   }
-  // Space: play/pause (only when not typing in an input or code editor)
   if (e.key === ' ') {
     const tag = document.activeElement?.tagName;
     const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';

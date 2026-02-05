@@ -1,7 +1,7 @@
 import type { ShaderParam, CompileError, UniformValue } from './types';
 
-// Annotation pattern: /*@type:name*/ value /*@*/
-const ANNOTATION_RE = /\/\*@(\w+):(\w+)\*\/\s*([\s\S]*?)\s*\/\*@\*\//g;
+// Annotation pattern: /*@type:name*/ value /*@*/  or  /*@type:name group:GroupName*/ value /*@*/
+const ANNOTATION_RE = /\/\*@(\w+):(\w+)(?:\s+group:(\w+))?\*\/\s*([\s\S]*?)\s*\/\*@\*\//g;
 
 // Uniform declaration pattern for auto-detection
 const UNIFORM_RE = /uniform\s+(float|vec[234]|int|bool)\s+(u_\w+)\s*;/g;
@@ -32,7 +32,7 @@ export function preprocessAnnotated(
   const seen = new Set<string>();
 
   // Replace annotations with uniform references
-  let processed = source.replace(ANNOTATION_RE, (_match, type, name, value) => {
+  let processed = source.replace(ANNOTATION_RE, (_match, type, name, explicitGroup, value) => {
     const uniformName = `u_${name}`;
     if (!seen.has(name)) {
       seen.add(name);
@@ -40,7 +40,7 @@ export function preprocessAnnotated(
       if (existing) {
         discoveredParams.push(existing);
       } else {
-        discoveredParams.push(inferParam(name, type, value.trim(), uniformName));
+        discoveredParams.push(inferParam(name, type, value.trim(), uniformName, explicitGroup));
       }
     }
     return uniformName;
@@ -103,7 +103,7 @@ export function detectUniforms(source: string): ShaderParam[] {
       step: glslT === 'int' ? 1 : 0.01,
       uniformName: name,
       glslDefault: defaultGlslLiteral(glslT),
-      group: 'Custom',
+      group: 'custom',
     });
   }
   return params;
@@ -135,7 +135,7 @@ export function parseCompileErrors(
 
 // --- Helpers ---
 
-function inferParam(name: string, type: string, glslValue: string, uniformName: string): ShaderParam {
+function inferParam(name: string, type: string, glslValue: string, uniformName: string, explicitGroup?: string): ShaderParam {
   const paramType = type === 'color' ? 'color' : mapGlslType(type);
 
   let defaultValue: UniformValue;
@@ -153,29 +153,57 @@ function inferParam(name: string, type: string, glslValue: string, uniformName: 
 
   const numVal = typeof defaultValue === 'number' ? defaultValue : 0;
 
+  // Smarter auto-range: clamp to reasonable bounds
+  let autoMin: number | undefined;
+  let autoMax: number | undefined;
+  let autoStep: number;
+  if (paramType === 'color') {
+    autoMin = undefined;
+    autoMax = undefined;
+    autoStep = 0.01;
+  } else if (paramType === 'int') {
+    autoMin = Math.min(0, Math.floor(numVal) - 5);
+    autoMax = Math.max(10, Math.ceil(numVal) + 10);
+    autoStep = 1;
+  } else {
+    // Float: scale range proportionally, but clamp to sane bounds
+    const absVal = Math.abs(numVal);
+    if (absVal < 0.001) {
+      autoMin = 0;
+      autoMax = 1;
+    } else {
+      autoMin = Math.min(0, numVal - absVal);
+      autoMax = Math.max(absVal * 0.1, numVal + absVal * 2);
+    }
+    // Step: aim for ~200 positions across the range
+    autoStep = Math.max(0.001, (autoMax - autoMin) / 200);
+  }
+
   return {
     id: name,
     label: formatLabel(name),
     type: paramType,
     defaultValue,
-    min: paramType === 'color' ? undefined : Math.min(0, numVal * 2),
-    max: paramType === 'color' ? undefined : Math.max(1, numVal * 3),
-    step: paramType === 'int' ? 1 : 0.001,
+    min: autoMin,
+    max: autoMax,
+    step: autoStep,
     uniformName,
     glslDefault: glslValue,
-    group: inferGroup(name, paramType),
+    group: explicitGroup?.toLowerCase() ?? inferGroup(name, paramType),
   };
 }
 
 function inferGroup(name: string, type: string): string {
-  if (type === 'color') return 'Colors';
+  if (type === 'color') return 'colors';
   const lower = name.toLowerCase();
-  if (lower.includes('speed') || lower.includes('drift') || lower.includes('time')) return 'Animation';
-  if (lower.includes('grain') || lower.includes('warp') || lower.includes('displace')) return 'Effects';
-  if (lower.includes('noise') || lower.includes('scale') || lower.includes('fbm')) return 'Noise';
-  if (lower.includes('mix') || lower.includes('smooth') || lower.includes('mask')) return 'Blending';
-  if (lower.includes('rotation') || lower.includes('angle')) return 'Transform';
-  return 'Parameters';
+  if (lower.includes('speed') || lower.includes('drift') || lower.includes('time')) return 'animation';
+  if (lower.includes('grain') || lower.includes('bright') || lower.includes('vignette')) return 'effects';
+  if (lower.includes('warp') || lower.includes('noise') || lower.includes('scale') || lower.includes('fbm')) return 'noise';
+  if (lower.includes('wave') || lower.includes('displace') || lower.includes('freq') || lower.includes('amplitude')) return 'waves';
+  if (lower.includes('mix') || lower.includes('smooth') || lower.includes('grad') && (lower.includes('low') || lower.includes('high'))) return 'blending';
+  if (lower.includes('mask')) return 'mask';
+  if (lower.includes('rotation') || lower.includes('angle')) return 'transform';
+  return 'effects';
 }
 
 function formatLabel(id: string): string {

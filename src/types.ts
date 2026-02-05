@@ -13,33 +13,8 @@ export interface ShaderParam {
   uniformName: string;
   glslDefault: string;
   group: string;
-}
-
-export interface ShaderTemplate {
-  id: string;
-  name: string;
-  description: string;
-  vertexSource: string;
-  fragmentSource: string;
-  params: ShaderParam[];
-  exportFunctionName: string;
-  usesTexture: boolean;
-  exportAsync: boolean;
-  vertexType: 'simple' | 'uv';
-}
-
-export interface ShaderProject {
-  id: string;
-  name: string;
-  templateId: string | null;
-  vertexSource: string;
-  fragmentSource: string;
-  params: ShaderParam[];
-  paramValues: Record<string, UniformValue>;
-  exportFunctionName: string;
-  usesTexture: boolean;
-  vertexType: 'simple' | 'uv';
-  exportAsync: boolean;
+  /** Display angles in degrees (converted to radians for the GPU) */
+  displayUnit?: 'deg';
 }
 
 export interface CompileError {
@@ -48,34 +23,66 @@ export interface CompileError {
   line?: number;
 }
 
-export interface SavedShader {
+// --- Effect block system ---
+
+export type EffectCategory = 'uv-transform' | 'generator' | 'post';
+
+export interface EffectBlock {
   id: string;
   name: string;
-  savedAt: number;
-  templateId: string | null;
-  vertexSource: string;
-  fragmentSource: string;
+  description: string;
+  category: EffectCategory;
+  order: number;
+  requiredUtils: ('hash' | 'noise' | 'fbm')[];
   params: ShaderParam[];
+  glslBody: string;
+  postMixGlsl?: string;
+}
+
+export interface ActiveEffect {
+  instanceId: string;
+  blockId: string;
+  enabled: boolean;
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  effects: { blockId: string }[];
+  paramOverrides: Record<string, UniformValue>;
+  colorA?: string;
+  colorB?: string;
+}
+
+export interface AppState {
+  shaderName: string;
+  activePresetId: string | null;
+  activeEffects: ActiveEffect[];
   paramValues: Record<string, UniformValue>;
+  colorA: string;
+  colorB: string;
+  compiledFragmentSource: string;
+  editorOpen: boolean;
+  editorHeight: number;
+  playing: boolean;
+  timeScale: number;
+  compileErrors: CompileError[];
   exportFunctionName: string;
   usesTexture: boolean;
   vertexType: 'simple' | 'uv';
   exportAsync: boolean;
 }
 
-export interface AppState {
-  activeTemplateId: string | null;
-  shaderName: string;
-  vertexSource: string;
-  fragmentSource: string;
-  compiledFragmentSource: string;
-  params: ShaderParam[];
+export interface SavedShader {
+  id: string;
+  name: string;
+  savedAt: number;
+  activePresetId: string | null;
+  activeEffects: ActiveEffect[];
   paramValues: Record<string, UniformValue>;
-  editorOpen: boolean;
-  editorHeight: number;
-  playing: boolean;
-  timeScale: number;
-  compileErrors: CompileError[];
+  colorA: string;
+  colorB: string;
   exportFunctionName: string;
   usesTexture: boolean;
   vertexType: 'simple' | 'uv';

@@ -7,8 +7,8 @@ interface ControlsOptions {
 }
 
 /**
- * Renders parameter controls into the container, grouped by param.group.
- * Returns an update function.
+ * Renders parameter controls for a single effect block.
+ * No group headers — the parent (sidebar) handles grouping by effect.
  */
 export function createControls(
   container: HTMLElement,
@@ -19,31 +19,24 @@ export function createControls(
 } {
   let currentParams = options.params;
   let currentValues = { ...options.values };
-  let onChange = options.onChange;
+  const onChange = options.onChange;
 
   function render() {
     container.innerHTML = '';
 
     if (currentParams.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.textContent = 'No parameters. Add uniforms in the code editor.';
-      container.appendChild(empty);
       return;
     }
 
-    // Group params
-    const groups = new Map<string, ShaderParam[]>();
-    for (const p of currentParams) {
-      const g = p.group || 'Parameters';
-      if (!groups.has(g)) groups.set(g, []);
-      groups.get(g)!.push(p);
+    const group = document.createElement('div');
+    group.className = 'control-group';
+
+    for (const param of currentParams) {
+      const control = createControl(param, currentValues[param.id] ?? param.defaultValue, onChange);
+      group.appendChild(control);
     }
 
-    for (const [groupName, params] of groups) {
-      const section = createSection(groupName, params, currentValues, onChange);
-      container.appendChild(section);
-    }
+    container.appendChild(group);
   }
 
   render();
@@ -56,51 +49,13 @@ export function createControls(
       if (paramsChanged) {
         render();
       } else {
-        // Just update values in-place
-        updateValues(container, values);
+        updateValues(container, values, currentParams);
       }
     },
     destroy() {
       container.innerHTML = '';
     },
   };
-}
-
-function createSection(
-  name: string,
-  params: ShaderParam[],
-  values: Record<string, UniformValue>,
-  onChange: (id: string, value: UniformValue) => void
-): HTMLElement {
-  const section = document.createElement('div');
-  section.className = 'sidebar-section';
-
-  const header = document.createElement('div');
-  header.className = 'sidebar-section-header';
-  header.innerHTML = `
-    <span class="sidebar-section-title">${name}</span>
-    <svg class="sidebar-section-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M3 4.5L6 7.5L9 4.5"/>
-    </svg>
-  `;
-  header.addEventListener('click', () => {
-    section.classList.toggle('collapsed');
-  });
-
-  const content = document.createElement('div');
-  content.className = 'sidebar-section-content';
-
-  const group = document.createElement('div');
-  group.className = 'control-group';
-
-  for (const param of params) {
-    const control = createControl(param, values[param.id] ?? param.defaultValue, onChange);
-    group.appendChild(control);
-  }
-
-  content.appendChild(group);
-  section.append(header, content);
-  return section;
 }
 
 function createControl(
@@ -325,15 +280,21 @@ function createBoolControl(
   return wrap;
 }
 
-function updateValues(container: HTMLElement, values: Record<string, UniformValue>): void {
+function updateValues(container: HTMLElement, values: Record<string, UniformValue>, params: ShaderParam[]): void {
   for (const [id, value] of Object.entries(values)) {
     const el = container.querySelector<HTMLElement>(`[data-param-id="${id}"]`);
     if (!el) continue;
+
+    const param = params.find(p => p.id === id);
 
     const slider = el.querySelector<HTMLInputElement>('[data-slider]');
     if (slider && typeof value === 'number') {
       if (document.activeElement !== slider) {
         slider.value = String(value);
+      }
+      const display = el.querySelector<HTMLElement>('[data-value-display]');
+      if (display && param) {
+        display.textContent = formatValue(value, param);
       }
     }
   }
@@ -341,7 +302,8 @@ function updateValues(container: HTMLElement, values: Record<string, UniformValu
 
 function formatValue(v: number, param: ShaderParam): string {
   const step = param.step ?? 0.01;
-  if (step >= 1) return String(Math.round(v));
+  const suffix = param.displayUnit === 'deg' ? '\u00B0' : '';
+  if (step >= 1) return String(Math.round(v)) + suffix;
   const decimals = Math.max(0, -Math.floor(Math.log10(step)));
-  return v.toFixed(Math.min(decimals, 4));
+  return v.toFixed(Math.min(decimals, 4)) + suffix;
 }
