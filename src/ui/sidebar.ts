@@ -444,6 +444,9 @@ function createColorRow(
   wrap.className = 'control color-row';
 
   wrap.innerHTML = `
+    <div class="control-label">
+      <span class="control-label-text">Color ${index + 1}</span>
+    </div>
     <div class="color-control">
       <div class="color-swatch" data-swatch>
         <input type="color" value="${value}" data-color-picker />
@@ -478,7 +481,7 @@ function createColorRow(
   const removeBtn = document.createElement('button');
   removeBtn.className = 'btn btn-ghost btn-icon color-remove-btn';
   removeBtn.title = 'Remove color';
-  removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><path d="M2.75 4.75H15.25"/><path d="M6.75 4.75V2.75C6.75 2.2 7.198 1.75 7.75 1.75H10.25C10.802 1.75 11.25 2.2 11.25 2.75V4.75"/><path d="M7.23206 8.72998L10.7681 12.27"/><path d="M10.7681 8.72998L7.23206 12.27"/><path d="M13.6977 7.75L13.35 14.35C13.294 15.4201 12.416 16.25 11.353 16.25H6.64805C5.58405 16.25 4.70705 15.42 4.65105 14.35L4.30334 7.75"/></g></svg>`;
+  removeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l6 6M9 3l-6 6"/></svg>`;
   removeBtn.addEventListener('click', () => onRemove(index));
   wrap.appendChild(removeBtn);
 
