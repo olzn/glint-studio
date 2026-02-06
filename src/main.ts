@@ -127,12 +127,12 @@ composeAndCompile();
 // --- Shader name input ---
 const nameInput = document.createElement('input');
 nameInput.type = 'text';
-nameInput.className = 'header-shader-name';
+nameInput.className = 'sidebar-shader-name';
+nameInput.placeholder = 'Shader name…';
 nameInput.value = store.getState().shaderName;
 nameInput.addEventListener('change', () => {
   store.setState({ shaderName: nameInput.value.trim() || 'Untitled' });
 });
-layout.headerLeft.appendChild(nameInput);
 
 // --- Time controls ---
 const timeControls = createTimeControls(layout.headerCenter, {
@@ -390,6 +390,7 @@ function refreshSidebar(): void {
 
 // --- Sidebar ---
 const sidebar = createSidebar(layout.sidebar, {
+  nameInputEl: nameInput,
   presets,
   activePresetId: store.getState().activePresetId,
   activeEffects: store.getState().activeEffects,

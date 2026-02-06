@@ -29,6 +29,7 @@ interface SidebarOptions {
   onDeleteSaved: (id: string) => void;
   onShareSaved: (id: string) => void;
   onRenameSaved: (id: string, newName: string) => void;
+  nameInputEl: HTMLInputElement;
 }
 
 export function createSidebar(
@@ -43,6 +44,16 @@ export function createSidebar(
   destroy: () => void;
 } {
   container.innerHTML = '';
+
+  // --- Shader name ---
+  const nameWrapper = document.createElement('div');
+  nameWrapper.className = 'sidebar-name-field';
+  const nameLabel = document.createElement('label');
+  nameLabel.className = 'sidebar-name-label';
+  nameLabel.textContent = 'Shader Name';
+  nameWrapper.appendChild(nameLabel);
+  nameWrapper.appendChild(options.nameInputEl);
+  container.appendChild(nameWrapper);
 
   // --- Presets section ---
   const presetsSection = createSection('Presets', false);
