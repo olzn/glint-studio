@@ -160,18 +160,74 @@ export function encodeShaderUrl(saved: SavedShader): string {
   return btoa(JSON.stringify(payload));
 }
 
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+const MAX_NAME_LENGTH = 120;
+const MAX_EFFECTS = 50;
+const MAX_COLORS = 20;
+
+function isValidUniformValue(v: unknown): boolean {
+  if (typeof v === 'number') return isFinite(v);
+  if (typeof v === 'string') return HEX_COLOR_RE.test(v);
+  if (Array.isArray(v)) {
+    return (v.length === 2 || v.length === 3) && v.every(n => typeof n === 'number' && isFinite(n));
+  }
+  return false;
+}
+
+function sanitizeActiveEffects(raw: unknown): AppState['activeEffects'] | null {
+  if (!Array.isArray(raw)) return null;
+  if (raw.length > MAX_EFFECTS) return null;
+  const result: AppState['activeEffects'] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null) return null;
+    const { instanceId, blockId, enabled } = item as Record<string, unknown>;
+    if (typeof instanceId !== 'string' || typeof blockId !== 'string' || typeof enabled !== 'boolean') return null;
+    if (!getEffect(blockId)) return null;
+    result.push({ instanceId: String(instanceId), blockId: String(blockId), enabled: Boolean(enabled) });
+  }
+  return result;
+}
+
+function sanitizeParamValues(raw: unknown): Record<string, AppState['paramValues'][string]> | null {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  const result: Record<string, AppState['paramValues'][string]> = {};
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof key !== 'string') return null;
+    if (!isValidUniformValue(val)) return null;
+    result[key] = val as AppState['paramValues'][string];
+  }
+  return result;
+}
+
+function sanitizeColors(raw: unknown): string[] | null {
+  if (!Array.isArray(raw)) return null;
+  if (raw.length > MAX_COLORS) return null;
+  for (const c of raw) {
+    if (typeof c !== 'string' || !HEX_COLOR_RE.test(c)) return null;
+  }
+  return raw as string[];
+}
+
 export function decodeShaderUrl(hash: string): Partial<AppState> | null {
   try {
     const match = hash.match(/^#s=(.+)$/);
     if (!match) return null;
     const payload = JSON.parse(atob(match[1]));
-    return {
-      shaderName: payload.n || 'Shared Shader',
-      activeEffects: payload.e || [],
-      paramValues: payload.p || {},
-      colors: payload.c || [],
-      activePresetId: null,
-    };
+    if (typeof payload !== 'object' || payload === null) return null;
+
+    const activeEffects = sanitizeActiveEffects(payload.e);
+    if (!activeEffects) return null;
+
+    const paramValues = sanitizeParamValues(payload.p);
+    if (!paramValues) return null;
+
+    const colors = sanitizeColors(payload.c);
+    if (!colors) return null;
+
+    const rawName = typeof payload.n === 'string' ? payload.n : 'Shared Shader';
+    const shaderName = rawName.slice(0, MAX_NAME_LENGTH);
+
+    return { shaderName, activeEffects, paramValues, colors, activePresetId: null };
   } catch {
     return null;
   }
