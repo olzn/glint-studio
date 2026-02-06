@@ -44,29 +44,31 @@ export function createSidebar(
 
   // --- Presets section ---
   const presetsSection = createSection('Presets', false);
-  const presetGrid = document.createElement('div');
-  presetGrid.className = 'template-grid';
+  const presetList = document.createElement('div');
+  presetList.className = 'preset-list';
 
   for (const preset of options.presets) {
-    const card = document.createElement('div');
-    card.className = 'template-card' + (preset.id === options.activePresetId ? ' active' : '');
-    card.dataset.presetId = preset.id;
+    const row = document.createElement('div');
+    row.className = 'preset-row' + (preset.id === options.activePresetId ? ' active' : '');
+    row.dataset.presetId = preset.id;
 
     const thumbnail = renderPresetThumbnail(preset);
-    const previewHtml = thumbnail
-      ? `<div class="template-card-preview"><img src="${thumbnail}" style="width:100%;height:100%;object-fit:cover;display:block" /></div>`
-      : '';
+    const thumbHtml = thumbnail
+      ? `<div class="preset-row-thumb"><img src="${thumbnail}" /></div>`
+      : `<div class="preset-row-thumb"></div>`;
 
-    card.innerHTML = `
-      ${previewHtml}
-      <div class="template-card-name">${preset.name}</div>
-      <div class="template-card-desc">${preset.description}</div>
+    row.innerHTML = `
+      ${thumbHtml}
+      <div class="preset-row-info">
+        <span class="preset-row-name">${preset.name}</span>
+        <span class="preset-row-desc">${preset.description}</span>
+      </div>
     `;
-    card.addEventListener('click', () => options.onPresetSelect(preset.id));
-    presetGrid.appendChild(card);
+    row.addEventListener('click', () => options.onPresetSelect(preset.id));
+    presetList.appendChild(row);
   }
 
-  presetsSection.content.appendChild(presetGrid);
+  presetsSection.content.appendChild(presetList);
   container.appendChild(presetsSection.element);
 
   // --- Colors section ---
@@ -225,152 +227,205 @@ export function createSidebar(
       return;
     }
 
-    let dragFromIndex = -1;
+    // Group effects by category while preserving flat indices for reorder
+    const categoryOrder: Array<{ key: string; label: string }> = [
+      { key: 'uv-transform', label: 'UV Transform' },
+      { key: 'generator', label: 'Generators' },
+      { key: 'post', label: 'Post-Processing' },
+    ];
 
+    // Build category ranges (start/end flat indices) for drag clamping
+    const categoryRanges: Map<string, { start: number; end: number }> = new Map();
     for (let idx = 0; idx < effects.length; idx++) {
-      const ae = effects[idx];
-      const block = getEffect(ae.blockId);
+      const block = getEffect(effects[idx].blockId);
       if (!block) continue;
+      const cat = block.category;
+      const range = categoryRanges.get(cat);
+      if (range) {
+        range.end = idx;
+      } else {
+        categoryRanges.set(cat, { start: idx, end: idx });
+      }
+    }
 
-      const item = document.createElement('div');
-      item.className = 'effect-item' + (ae.enabled ? '' : ' disabled');
-      item.dataset.instanceId = ae.instanceId;
-      item.dataset.index = String(idx);
-      item.draggable = true;
+    let dragFromIndex = -1;
+    let dragFromCategory = '';
 
-      // Drag-and-drop handlers
-      item.addEventListener('dragstart', (e) => {
-        dragFromIndex = idx;
-        item.classList.add('dragging');
-        e.dataTransfer!.effectAllowed = 'move';
-        e.dataTransfer!.setData('text/plain', String(idx));
-      });
+    for (const { key: catKey, label: catLabel } of categoryOrder) {
+      const range = categoryRanges.get(catKey);
+      if (!range) continue;
 
-      item.addEventListener('dragend', () => {
-        item.classList.remove('dragging');
-        effectsContainer.querySelectorAll('.effect-item').forEach(el => {
-          el.classList.remove('drag-over-top', 'drag-over-bottom');
+      // Category header
+      const catHeader = document.createElement('div');
+      catHeader.className = 'effect-category-header';
+      catHeader.textContent = catLabel;
+      effectsContainer.appendChild(catHeader);
+
+      for (let idx = range.start; idx <= range.end; idx++) {
+        const ae = effects[idx];
+        const block = getEffect(ae.blockId);
+        if (!block || block.category !== catKey) continue;
+
+        const item = document.createElement('div');
+        item.className = 'effect-item' + (ae.enabled ? '' : ' disabled');
+        item.dataset.instanceId = ae.instanceId;
+        item.dataset.index = String(idx);
+
+        // Drag-and-drop: only the handle initiates drag
+
+        item.addEventListener('dragend', () => {
+          item.classList.remove('dragging');
+          effectsContainer.querySelectorAll('.effect-item').forEach(el => {
+            el.classList.remove('drag-over-top', 'drag-over-bottom');
+          });
         });
-      });
 
-      item.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer!.dropEffect = 'move';
-        const rect = item.getBoundingClientRect();
-        const midY = rect.top + rect.height / 2;
-        item.classList.remove('drag-over-top', 'drag-over-bottom');
-        if (e.clientY < midY) {
-          item.classList.add('drag-over-top');
-        } else {
-          item.classList.add('drag-over-bottom');
-        }
-      });
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          // Only allow drop within same category
+          const itemBlock = getEffect(ae.blockId);
+          if (itemBlock && itemBlock.category !== dragFromCategory) {
+            e.dataTransfer!.dropEffect = 'none';
+            return;
+          }
+          e.dataTransfer!.dropEffect = 'move';
+          const rect = item.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+          if (e.clientY < midY) {
+            item.classList.add('drag-over-top');
+          } else {
+            item.classList.add('drag-over-bottom');
+          }
+        });
 
-      item.addEventListener('dragleave', () => {
-        item.classList.remove('drag-over-top', 'drag-over-bottom');
-      });
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
 
-      item.addEventListener('drop', (e) => {
-        e.preventDefault();
-        item.classList.remove('drag-over-top', 'drag-over-bottom');
-        const rect = item.getBoundingClientRect();
-        const midY = rect.top + rect.height / 2;
-        let toIndex = idx;
-        if (e.clientY >= midY && toIndex < effects.length - 1) {
-          toIndex++;
-        }
-        if (dragFromIndex !== -1 && dragFromIndex !== toIndex) {
-          options.onReorderEffects(dragFromIndex, toIndex);
-        }
-        dragFromIndex = -1;
-      });
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('drag-over-top', 'drag-over-bottom');
+          // Only allow drop within same category
+          const itemBlock = getEffect(ae.blockId);
+          if (!itemBlock || itemBlock.category !== dragFromCategory) {
+            dragFromIndex = -1;
+            return;
+          }
+          const rect = item.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          let toIndex = idx;
+          if (e.clientY >= midY && toIndex < range.end) {
+            toIndex++;
+          }
+          if (dragFromIndex !== -1 && dragFromIndex !== toIndex) {
+            options.onReorderEffects(dragFromIndex, toIndex);
+          }
+          dragFromIndex = -1;
+        });
 
-      // Header row
-      const header = document.createElement('div');
-      header.className = 'effect-item-header';
+        // Header row
+        const header = document.createElement('div');
+        header.className = 'effect-item-header';
 
-      const leftSide = document.createElement('div');
-      leftSide.className = 'effect-item-left';
+        const leftSide = document.createElement('div');
+        leftSide.className = 'effect-item-left';
 
-      // Drag handle
-      const dragHandle = document.createElement('div');
-      dragHandle.className = 'effect-drag-handle';
-      dragHandle.innerHTML = `<svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/><circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/></svg>`;
+        // Drag handle — only this element initiates reorder drag
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'effect-drag-handle';
+        dragHandle.draggable = true;
+        dragHandle.innerHTML = `<svg width="8" height="14" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/><circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/></svg>`;
+        dragHandle.addEventListener('dragstart', (e) => {
+          dragFromIndex = idx;
+          dragFromCategory = catKey;
+          item.classList.add('dragging');
+          e.dataTransfer!.effectAllowed = 'move';
+          e.dataTransfer!.setData('text/plain', String(idx));
+          e.dataTransfer!.setDragImage(item, 0, 0);
+        });
 
-      const toggle = document.createElement('input');
-      toggle.type = 'checkbox';
-      toggle.checked = ae.enabled;
-      toggle.className = 'effect-toggle';
-      toggle.addEventListener('change', () => {
-        options.onToggleEffect(ae.instanceId, toggle.checked);
-      });
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.checked = ae.enabled;
+        toggle.className = 'effect-toggle';
+        toggle.addEventListener('change', () => {
+          options.onToggleEffect(ae.instanceId, toggle.checked);
+        });
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'effect-item-name';
-      nameSpan.textContent = block.name;
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'effect-item-name';
+        nameSpan.textContent = block.name;
 
-      // Category badge
-      const badge = document.createElement('span');
-      badge.className = 'effect-category-badge';
-      const categoryLabels: Record<string, string> = {
-        'uv-transform': 'UV',
-        'generator': 'GEN',
-        'post': 'POST',
-      };
-      badge.textContent = categoryLabels[block.category] ?? block.category;
-      badge.dataset.category = block.category;
+        // Chevron indicator for expand/collapse
+        const chevron = document.createElement('span');
+        chevron.className = 'effect-chevron';
+        chevron.innerHTML = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5L6 7.5L9 4.5"/></svg>`;
 
-      leftSide.append(dragHandle, toggle, nameSpan, badge);
+        leftSide.append(dragHandle, toggle, nameSpan);
 
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'btn btn-ghost btn-icon effect-remove-btn';
-      removeBtn.title = 'Remove effect';
-      removeBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l6 6M9 3l-6 6"/></svg>`;
-      removeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        options.onRemoveEffect(ae.instanceId);
-      });
+        const rightSide = document.createElement('div');
+        rightSide.className = 'effect-item-right';
 
-      header.append(leftSide, removeBtn);
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn btn-ghost btn-icon effect-remove-btn';
+        removeBtn.title = 'Remove effect';
+        removeBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l6 6M9 3l-6 6"/></svg>`;
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          options.onRemoveEffect(ae.instanceId);
+        });
 
-      // Controls container (collapsible)
-      const controlsContainer = document.createElement('div');
-      controlsContainer.className = 'effect-item-controls';
+        rightSide.append(chevron, removeBtn);
+        header.append(leftSide, rightSide);
 
-      // Default to collapsed unless explicitly expanded; newly added effects start expanded
-      const isExpanded = expandedEffects.has(ae.instanceId);
-      if (!isExpanded) {
-        controlsContainer.style.display = 'none';
-      }
+        // Controls container (collapsible)
+        const controlsContainer = document.createElement('div');
+        controlsContainer.className = 'effect-item-controls';
 
-      // Get this instance's params (scoped by instanceId)
-      const instanceParams = params.filter(p => p.id.startsWith(ae.instanceId + '_'));
-      const instanceValues: Record<string, UniformValue> = {};
-      for (const p of instanceParams) {
-        instanceValues[p.id] = values[p.id] ?? p.defaultValue;
-      }
-
-      const ctrl = createControls(controlsContainer, {
-        params: instanceParams,
-        values: instanceValues,
-        onChange: options.onParamChange,
-      });
-      effectControls.set(ae.instanceId, ctrl);
-
-      // Toggle expand/collapse on name click
-      nameSpan.style.cursor = 'pointer';
-      nameSpan.addEventListener('click', () => {
-        if (expandedEffects.has(ae.instanceId)) {
-          expandedEffects.delete(ae.instanceId);
+        // Default to collapsed unless explicitly expanded; newly added effects start expanded
+        const isExpanded = expandedEffects.has(ae.instanceId);
+        if (!isExpanded) {
           controlsContainer.style.display = 'none';
-        } else {
-          expandedEffects.add(ae.instanceId);
-          controlsContainer.style.display = '';
+          chevron.classList.add('collapsed');
         }
-      });
 
-      item.append(header, controlsContainer);
-      effectsContainer.appendChild(item);
+        // Get this instance's params (scoped by instanceId)
+        const instanceParams = params.filter(p => p.id.startsWith(ae.instanceId + '_'));
+        const instanceValues: Record<string, UniformValue> = {};
+        for (const p of instanceParams) {
+          instanceValues[p.id] = values[p.id] ?? p.defaultValue;
+        }
+
+        const ctrl = createControls(controlsContainer, {
+          params: instanceParams,
+          values: instanceValues,
+          onChange: options.onParamChange,
+        });
+        effectControls.set(ae.instanceId, ctrl);
+
+        // Expand/collapse: clicking anywhere on the header (except interactive controls)
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', (e) => {
+          // Don't toggle when clicking the toggle switch, drag handle, or remove button
+          const target = e.target as HTMLElement;
+          if (target.closest('.effect-toggle') || target.closest('.effect-drag-handle') || target.closest('.effect-remove-btn')) {
+            return;
+          }
+          if (expandedEffects.has(ae.instanceId)) {
+            expandedEffects.delete(ae.instanceId);
+            controlsContainer.style.display = 'none';
+            chevron.classList.add('collapsed');
+          } else {
+            expandedEffects.add(ae.instanceId);
+            controlsContainer.style.display = '';
+            chevron.classList.remove('collapsed');
+          }
+        });
+
+        item.append(header, controlsContainer);
+        effectsContainer.appendChild(item);
+      }
     }
   }
 
@@ -392,8 +447,8 @@ export function createSidebar(
       renderColors(colors);
     },
     updatePreset(id) {
-      container.querySelectorAll('.template-card').forEach(card => {
-        card.classList.toggle('active', (card as HTMLElement).dataset.presetId === id);
+      container.querySelectorAll('.preset-row').forEach(row => {
+        row.classList.toggle('active', (row as HTMLElement).dataset.presetId === id);
       });
     },
     updateSaved(saved) {

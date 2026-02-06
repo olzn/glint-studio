@@ -279,7 +279,35 @@ function addEffect(blockId: string): void {
 
   const state = store.getState();
   const instanceId = generateInstanceId();
-  const activeEffects = [...state.activeEffects, { instanceId, blockId, enabled: true }];
+  const newEffect: ActiveEffect = { instanceId, blockId, enabled: true };
+
+  // Insert at the correct category position
+  const categoryPriority: Record<string, number> = { 'uv-transform': 0, 'generator': 1, 'post': 2 };
+  const newPriority = categoryPriority[block.category] ?? 1;
+
+  // Find the last effect in the same category, or the right insertion point
+  let insertIndex = -1;
+  for (let i = state.activeEffects.length - 1; i >= 0; i--) {
+    const existing = getEffect(state.activeEffects[i].blockId);
+    if (existing && existing.category === block.category) {
+      insertIndex = i + 1;
+      break;
+    }
+  }
+  if (insertIndex === -1) {
+    // No effects of this category yet — find the first effect of a higher-priority category
+    insertIndex = state.activeEffects.length; // default: end
+    for (let i = 0; i < state.activeEffects.length; i++) {
+      const existing = getEffect(state.activeEffects[i].blockId);
+      if (existing && (categoryPriority[existing.category] ?? 1) > newPriority) {
+        insertIndex = i;
+        break;
+      }
+    }
+  }
+
+  const activeEffects = [...state.activeEffects];
+  activeEffects.splice(insertIndex, 0, newEffect);
 
   // Set defaults for new effect's params
   const paramValues = { ...state.paramValues };
