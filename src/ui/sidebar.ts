@@ -665,6 +665,16 @@ function renderSavedList(
     const item = document.createElement('div');
     item.className = 'saved-item';
 
+    // Color swatch — small gradient thumbnail from shader colors
+    const swatch = document.createElement('div');
+    swatch.className = 'saved-item-swatch';
+    if (shader.colors && shader.colors.length > 0) {
+      const stops = shader.colors.length === 1
+        ? shader.colors[0]
+        : shader.colors.join(', ');
+      swatch.style.background = `linear-gradient(135deg, ${stops})`;
+    }
+
     const info = document.createElement('div');
     info.className = 'saved-item-info';
 
@@ -755,7 +765,7 @@ function renderSavedList(
     });
 
     actions.append(renameBtn, shareBtn, deleteBtn);
-    item.append(info, actions);
+    item.append(swatch, info, actions);
     item.tabIndex = 0;
     item.addEventListener('click', () => onLoad(shader.id));
     item.addEventListener('keydown', (e) => {
