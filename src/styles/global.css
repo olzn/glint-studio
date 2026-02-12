@@ -296,12 +296,6 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: height 0.2s ease;
-}
-
-.editor-container.collapsed {
-  height: 0 !important;
-  border-top: none;
 }
 
 .editor-drag-handle {
@@ -385,22 +379,12 @@ html, body {
   width: 12px;
   height: 12px;
   color: var(--text-muted);
-  transition: transform 0.2s ease;
-}
-
-.sidebar-section.collapsed .sidebar-section-chevron {
-  transform: rotate(-90deg);
+  /* No CSS transition — rotation handled by Motion */
 }
 
 .sidebar-section-content {
   overflow: hidden;
-  transition: max-height 0.2s ease, opacity 0.2s ease;
-  opacity: 1;
-}
-
-.sidebar-section.collapsed .sidebar-section-content {
-  max-height: 0 !important;
-  opacity: 0;
+  /* Height/opacity animated by Motion's AnimatePresence */
 }
 
 .sidebar-section-content-inner {
@@ -678,8 +662,12 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.1s, color 0.1s;
+  transition: opacity 0.1s, color 0.1s, transform 0.1s;
   flex-shrink: 0;
+}
+
+.control-reset:active {
+  transform: scale(0.85);
 }
 
 
@@ -1017,7 +1005,7 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-primary);
 }
 
-/* Expand/collapse chevron */
+/* Expand/collapse chevron — rotation handled by Motion */
 .effect-chevron {
   display: flex;
   align-items: center;
@@ -1025,11 +1013,7 @@ input[type="range"]::-moz-range-thumb {
   width: 20px;
   height: 20px;
   color: var(--text-muted);
-  transition: transform 0.2s ease, color 0.15s;
-}
-
-.effect-chevron.collapsed {
-  transform: rotate(-90deg);
+  transition: color 0.15s;
 }
 
 
@@ -1338,6 +1322,7 @@ input[type="range"]::-moz-range-thumb {
 
   .control-reset:hover {
     color: var(--text-primary);
+    transform: scale(1.2);
   }
 
   .preset-row:hover {
