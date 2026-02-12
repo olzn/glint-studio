@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, memo } from 'react';
+import { useStore } from '../store';
 import type { ShaderParam, UniformValue } from '../types';
 
 /* ─────────────────────────────────────────────────────────
@@ -12,11 +13,10 @@ const RESET_SVG = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" s
 
 interface ParamControlsProps {
   params: ShaderParam[];
-  values: Record<string, UniformValue>;
   onChange: (paramId: string, value: UniformValue) => void;
 }
 
-export function ParamControls({ params, values, onChange }: ParamControlsProps) {
+export function ParamControls({ params, onChange }: ParamControlsProps) {
   if (params.length === 0) return null;
 
   return (
@@ -25,7 +25,6 @@ export function ParamControls({ params, values, onChange }: ParamControlsProps) 
         <ParamControl
           key={param.id}
           param={param}
-          value={values[param.id] ?? param.defaultValue}
           onChange={onChange}
         />
       ))}
@@ -37,11 +36,11 @@ export function ParamControls({ params, values, onChange }: ParamControlsProps) 
 
 interface ParamControlProps {
   param: ShaderParam;
-  value: UniformValue;
   onChange: (id: string, value: UniformValue) => void;
 }
 
-function ParamControl({ param, value, onChange }: ParamControlProps) {
+function ParamControl({ param, onChange }: ParamControlProps) {
+  const value = useStore((s) => s.paramValues[param.id]) ?? param.defaultValue;
   switch (param.type) {
     case 'color':
       return <ColorControl param={param} value={value as string} onChange={onChange} />;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
 import { SidebarSection } from './SidebarSection';
@@ -15,6 +15,19 @@ export function ColorsSection() {
   const colors = useStore((s) => s.colors);
   const setParamChange = useStore((s) => s.setParamChange);
   const setWithHistory = useStore((s) => s.setWithHistory);
+
+  // Stable IDs for color rows (so DnD reorder moves DOM nodes, not remounts)
+  const nextColorId = useRef(0);
+  const colorIds = useRef<number[]>(colors.map(() => nextColorId.current++));
+
+  // Sync IDs when colors change externally (undo, preset load)
+  if (colorIds.current.length < colors.length) {
+    while (colorIds.current.length < colors.length) {
+      colorIds.current.push(nextColorId.current++);
+    }
+  } else if (colorIds.current.length > colors.length) {
+    colorIds.current.length = colors.length;
+  }
 
   // DnD state
   const [dragFrom, setDragFrom] = useState(-1);
@@ -34,12 +47,14 @@ export function ColorsSection() {
 
   const handleAddColor = useCallback(() => {
     const cur = useStore.getState().colors;
+    colorIds.current.push(nextColorId.current++);
     setWithHistory({ colors: [...cur, '#808080'], activePresetId: null });
   }, [setWithHistory]);
 
   const handleRemoveColor = useCallback(
     (index: number) => {
       const cur = useStore.getState().colors;
+      colorIds.current.splice(index, 1);
       setWithHistory({
         colors: cur.filter((_, i) => i !== index),
         activePresetId: null,
@@ -55,6 +70,13 @@ export function ColorsSection() {
       const [moved] = newColors.splice(fromIndex, 1);
       const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
       newColors.splice(insertAt, 0, moved);
+
+      // Keep IDs in sync so React moves DOM nodes instead of remounting
+      const ids = [...colorIds.current];
+      const [movedId] = ids.splice(fromIndex, 1);
+      ids.splice(insertAt, 0, movedId);
+      colorIds.current = ids;
+
       setWithHistory({ colors: newColors, activePresetId: null });
     },
     [setWithHistory],
@@ -76,7 +98,7 @@ export function ColorsSection() {
         <AnimatePresence initial={false}>
           {colors.map((color, i) => (
             <ColorRow
-              key={i}
+              key={colorIds.current[i]}
               index={i}
               color={color}
               dragFrom={dragFrom}

@@ -46,7 +46,6 @@ const ITEM_SPRING = {
 
 export function EffectsSection() {
   const activeEffects = useStore((s) => s.activeEffects);
-  const paramValues = useStore((s) => s.paramValues);
   const setWithHistory = useStore((s) => s.setWithHistory);
   const setParamChange = useStore((s) => s.setParamChange);
   const set = useStore((s) => s.set);
@@ -373,7 +372,6 @@ export function EffectsSection() {
                         >
                           <ParamControls
                             params={instanceParams}
-                            values={paramValues}
                             onChange={handleParamChange}
                           />
                         </motion.div>
