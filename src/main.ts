@@ -10,6 +10,7 @@ import { createSidebar } from './ui/sidebar';
 import { createTimeControls } from './ui/time-controls';
 import { createCodeEditor } from './ui/code-editor';
 import { createExportPanel } from './ui/export-panel';
+import { showToast } from './ui/toast';
 import { loadSavedShaders, saveShader, deleteSavedShader, savedShaderToState, renameSavedShader, encodeShaderUrl, decodeShaderUrl, generateShaderName } from './persistence';
 import { bakeShader } from './export/bake';
 import { hexToVec3, formatFloat } from './compiler';
@@ -565,6 +566,7 @@ function handleSave(): void {
   saveShader(store.getState());
   sidebar.updateSaved(loadSavedShaders());
   saveBtn.disabled = false;
+  showToast('Shader saved');
 }
 
 function downloadFile(content: string, filename: string, mimeType: string): void {
