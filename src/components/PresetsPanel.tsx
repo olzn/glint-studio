@@ -1,10 +1,9 @@
-import { useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { useStore } from '../store';
 import { presets, getPreset } from '../presets';
 import { getEffect } from '../effects/index';
-import { compose, generateInstanceId } from '../composer';
-import { syncColors, syncUniforms } from '../uniforms';
+import { generateInstanceId } from '../composer';
 import { renderPresetThumbnail } from '../ui/preset-thumbnail';
 import { SidebarSection } from './SidebarSection';
 import type { ActiveEffect, UniformValue } from '../types';
@@ -13,13 +12,14 @@ export function PresetsPanel() {
   const activePresetId = useStore((s) => s.activePresetId);
   const setWithHistory = useStore((s) => s.setWithHistory);
 
-  // Compute thumbnails once
-  const thumbnails = useMemo(() => {
+  // Generate thumbnails after first paint so they don't block initial render
+  const [thumbnails, setThumbnails] = useState<Record<string, string | null>>({});
+  useEffect(() => {
     const map: Record<string, string | null> = {};
     for (const p of presets) {
       map[p.id] = renderPresetThumbnail(p);
     }
-    return map;
+    setThumbnails(map);
   }, []);
 
   const handleSelect = useCallback(
