@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
+import { getMotionValues } from '../hooks/useMotionTuning';
 import { SidebarSection } from './SidebarSection';
 
 const MAX_COLORS = 5;
@@ -171,10 +172,10 @@ const ColorRow = memo(function ColorRow({
   return (
     <motion.div
       className={`control color-row${isDragging ? ' dragging' : ''}${overClass}`}
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: getMotionValues().effectInitialX }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8, height: 0 }}
-      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.1 }}
+      exit={{ opacity: 0, y: getMotionValues().effectInitialX, height: 0 }}
+      transition={{ type: 'spring', visualDuration: getMotionValues().effectVisualDuration, bounce: getMotionValues().effectBounce }}
       onDragOver={(e) => {
         e.preventDefault();
         (e as any).dataTransfer && ((e as any).dataTransfer.dropEffect = 'move');
@@ -243,13 +244,11 @@ const ColorRow = memo(function ColorRow({
         />
       </div>
 
-      <motion.button
+      <button
         className="btn btn-ghost btn-icon color-remove-btn"
         title="Remove color"
         aria-label="Remove color"
         onClick={() => onRemove(index)}
-        whileHover={{ scale: 1.15 }}
-        whileTap={{ scale: 0.9 }}
         dangerouslySetInnerHTML={{ __html: REMOVE_SVG }}
       />
     </motion.div>

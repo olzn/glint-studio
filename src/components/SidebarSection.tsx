@@ -1,5 +1,6 @@
-import { useState, useRef, type ReactNode } from 'react';
+import { useState, useRef, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getMotionValues } from '../hooks/useMotionTuning';
 
 /* ─────────────────────────────────────────────────────────
  * SIDEBAR SECTION
@@ -7,12 +8,6 @@ import { motion, AnimatePresence } from 'motion/react';
  * Collapsible section with smooth height animation.
  * Spring-driven expand/collapse via Motion.
  * ───────────────────────────────────────────────────────── */
-
-const SECTION_SPRING = {
-  type: 'spring' as const,
-  visualDuration: 0.25,
-  bounce: 0.05,
-};
 
 interface SidebarSectionProps {
   title: string;
@@ -23,6 +18,13 @@ interface SidebarSectionProps {
 export function SidebarSection({ title, defaultCollapsed = false, children }: SidebarSectionProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const mv = getMotionValues();
+  const spring = useMemo(() => ({
+    type: 'spring' as const,
+    visualDuration: mv.sectionVisualDuration,
+    bounce: mv.sectionBounce,
+  }), [mv.sectionVisualDuration, mv.sectionBounce]);
 
   return (
     <div className={`sidebar-section${collapsed ? ' collapsed' : ''}`}>
@@ -38,7 +40,7 @@ export function SidebarSection({ title, defaultCollapsed = false, children }: Si
           stroke="currentColor"
           strokeWidth={1.5}
           animate={{ rotate: collapsed ? -90 : 0 }}
-          transition={SECTION_SPRING}
+          transition={spring}
         >
           <path d="M3 4.5L6 7.5L9 4.5" />
         </motion.svg>
@@ -52,7 +54,7 @@ export function SidebarSection({ title, defaultCollapsed = false, children }: Si
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={SECTION_SPRING}
+            transition={spring}
             style={{ overflow: 'hidden' }}
           >
             <div className="sidebar-section-content-inner">

@@ -5,6 +5,7 @@ import { EffectsSection } from './EffectsSection';
 import { SavedSection } from './SavedSection';
 import { ExportPanel } from './ExportPanel';
 
+
 export function Sidebar() {
   const shaderName = useStore((s) => s.shaderName);
   const set = useStore((s) => s.set);
