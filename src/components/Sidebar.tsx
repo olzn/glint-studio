@@ -4,7 +4,7 @@ import { ColorsSection } from './ColorsSection';
 import { EffectsSection } from './EffectsSection';
 import { SavedSection } from './SavedSection';
 import { ExportPanel } from './ExportPanel';
-import { MotionTuning } from './MotionTuning';
+
 
 export function Sidebar() {
   const shaderName = useStore((s) => s.shaderName);
@@ -40,7 +40,6 @@ export function Sidebar() {
       <EffectsSection />
       <SavedSection />
       <ExportPanel />
-      <MotionTuning />
     </div>
   );
 }
