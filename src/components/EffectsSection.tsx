@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
+import { getMotionValues } from '../hooks/useMotionTuning';
 import { getEffect, getEffectsByCategory } from '../effects/index';
 import { generateInstanceId } from '../composer';
 import { SidebarSection } from './SidebarSection';
@@ -36,12 +37,6 @@ const CATEGORY_NAMES: Record<string, string> = {
   'uv-transform': 'UV Transform',
   generator: 'Generators',
   post: 'Post-Processing',
-};
-
-const ITEM_SPRING = {
-  type: 'spring' as const,
-  visualDuration: 0.2,
-  bounce: 0.1,
 };
 
 export function EffectsSection() {
@@ -265,10 +260,10 @@ export function EffectsSection() {
                     className={`effect-item${ae.enabled ? '' : ' disabled'}`}
                     data-instance-id={ae.instanceId}
                     data-index={flatIndex}
-                    initial={{ opacity: 0, x: -12 }}
+                    initial={{ opacity: 0, x: getMotionValues().effectInitialX }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12, height: 0 }}
-                    transition={ITEM_SPRING}
+                    exit={{ opacity: 0, x: getMotionValues().effectInitialX, height: 0 }}
+                    transition={{ type: 'spring', visualDuration: getMotionValues().effectVisualDuration, bounce: getMotionValues().effectBounce }}
                     onDragOver={(e) => {
                       e.preventDefault();
                       const itemBlock = getEffect(ae.blockId);
@@ -331,7 +326,7 @@ export function EffectsSection() {
                         <motion.span
                           className={`effect-chevron${isExpanded ? '' : ' collapsed'}`}
                           animate={{ rotate: isExpanded ? 0 : -90 }}
-                          transition={{ type: 'spring', visualDuration: 0.15, bounce: 0 }}
+                          transition={{ type: 'spring', visualDuration: getMotionValues().effectVisualDuration, bounce: getMotionValues().effectBounce }}
                         >
                           <svg
                             width="10"
@@ -352,8 +347,8 @@ export function EffectsSection() {
                             e.stopPropagation();
                             handleRemoveEffect(ae.instanceId);
                           }}
-                          whileHover={{ scale: 1.15 }}
-                          whileTap={{ scale: 0.9 }}
+                          whileHover={{ scale: getMotionValues().hoverScale }}
+                          whileTap={{ scale: getMotionValues().tapScale }}
                           dangerouslySetInnerHTML={{ __html: REMOVE_SVG }}
                         />
                       </div>
@@ -367,7 +362,7 @@ export function EffectsSection() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={ITEM_SPRING}
+                          transition={{ type: 'spring', visualDuration: getMotionValues().effectVisualDuration, bounce: getMotionValues().effectBounce }}
                           style={{ overflow: 'hidden' }}
                         >
                           <ParamControls
@@ -402,10 +397,10 @@ function EffectCatalog({
   return (
     <motion.div
       className="effect-catalog"
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: getMotionValues().catalogInitialY }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.05 }}
+      exit={{ opacity: 0, y: getMotionValues().catalogInitialY }}
+      transition={{ type: 'spring', visualDuration: getMotionValues().catalogVisualDuration, bounce: getMotionValues().catalogBounce }}
     >
       <div className="effect-catalog-header">
         <span>Add Effect</span>
@@ -428,7 +423,7 @@ function EffectCatalog({
                 className="effect-catalog-item"
                 onClick={() => onSelect(effect.id)}
                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: getMotionValues().tapScale }}
               >
                 <div className="effect-catalog-item-name">{effect.name}</div>
                 <div className="effect-catalog-item-desc">{effect.description}</div>

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
+import { getMotionValues } from '../hooks/useMotionTuning';
 import {
   loadSavedShaders,
   deleteSavedShader,
@@ -172,10 +173,10 @@ function SavedItem({
           onDelete(shader.id);
         }
       }}
-      initial={{ opacity: 0, y: -6 }}
+      initial={{ opacity: 0, y: getMotionValues().effectInitialX }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0 }}
-      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.05 }}
+      transition={{ type: 'spring', visualDuration: getMotionValues().effectVisualDuration, bounce: getMotionValues().effectBounce }}
       whileHover={{ backgroundColor: 'rgba(255,255,255,0.03)' }}
     >
       {/* Color swatch */}
@@ -217,7 +218,7 @@ function SavedItem({
                 e.stopPropagation();
                 onDelete(shader.id);
               }}
-              whileTap={{ scale: 0.85 }}
+              whileTap={{ scale: getMotionValues().tapScale }}
               dangerouslySetInnerHTML={{ __html: CHECK_SVG }}
             />
             <motion.button
@@ -226,7 +227,7 @@ function SavedItem({
                 e.stopPropagation();
                 setConfirming(false);
               }}
-              whileTap={{ scale: 0.85 }}
+              whileTap={{ scale: getMotionValues().tapScale }}
               dangerouslySetInnerHTML={{ __html: CLOSE_SVG }}
             />
           </div>
@@ -237,8 +238,8 @@ function SavedItem({
               title="Rename"
               aria-label="Rename"
               onClick={startRename}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: getMotionValues().hoverScale }}
+              whileTap={{ scale: getMotionValues().tapScale }}
               dangerouslySetInnerHTML={{ __html: RENAME_SVG }}
             />
             <motion.button
@@ -249,8 +250,8 @@ function SavedItem({
                 e.stopPropagation();
                 onShare(shader.id);
               }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: getMotionValues().hoverScale }}
+              whileTap={{ scale: getMotionValues().tapScale }}
               dangerouslySetInnerHTML={{ __html: COPY_SVG }}
             />
             <motion.button
@@ -261,8 +262,8 @@ function SavedItem({
                 e.stopPropagation();
                 setConfirming(true);
               }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: getMotionValues().hoverScale }}
+              whileTap={{ scale: getMotionValues().tapScale }}
               dangerouslySetInnerHTML={{ __html: DELETE_SVG }}
             />
           </>

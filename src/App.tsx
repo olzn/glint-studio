@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import 'dialkit/styles.css';
 import { useRenderer } from './hooks/useRenderer';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutosave } from './hooks/useAutosave';

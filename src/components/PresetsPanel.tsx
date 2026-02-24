@@ -5,6 +5,7 @@ import { presets, getPreset } from '../presets';
 import { getEffect } from '../effects/index';
 import { generateInstanceId } from '../composer';
 import { renderPresetThumbnail } from '../ui/preset-thumbnail';
+import { getMotionValues } from '../hooks/useMotionTuning';
 import { SidebarSection } from './SidebarSection';
 import type { ActiveEffect, UniformValue } from '../types';
 
@@ -69,8 +70,8 @@ export function PresetsPanel() {
               }
             }}
             whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: 'spring', visualDuration: 0.15, bounce: 0 }}
+            whileTap={{ scale: getMotionValues().tapScale }}
+            transition={{ type: 'spring', visualDuration: getMotionValues().effectVisualDuration, bounce: getMotionValues().effectBounce }}
           >
             <div className="preset-row-thumb">
               {thumbnails[preset.id] && (
