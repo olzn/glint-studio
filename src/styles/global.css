@@ -1060,6 +1060,12 @@ input[type="range"]::-moz-range-thumb {
   border-top: 1px solid var(--border-subtle);
 }
 
+.effect-item-controls .dialkit-param-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* Nested controls inside effect items: flatten the field style */
 .effect-item-controls .control {
   background: transparent;

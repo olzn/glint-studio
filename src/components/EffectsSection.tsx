@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useStore } from '../store';
+import { getMotionValues } from '../hooks/useMotionTuning';
 import { getEffect, getEffectsByCategory } from '../effects/index';
 import { generateInstanceId } from '../composer';
 import { SidebarSection } from './SidebarSection';
@@ -434,10 +435,10 @@ function EffectCatalog({
   return (
     <motion.div
       className="effect-catalog"
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: getMotionValues().catalogInitialY }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.05 }}
+      exit={{ opacity: 0, y: getMotionValues().catalogInitialY }}
+      transition={{ type: 'spring', visualDuration: getMotionValues().catalogVisualDuration, bounce: getMotionValues().catalogBounce }}
     >
       <div className="effect-catalog-header">
         <span>Add Effect</span>
@@ -460,7 +461,7 @@ function EffectCatalog({
                 className="effect-catalog-item"
                 onClick={() => onSelect(effect.id)}
                 whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: getMotionValues().tapScale }}
               >
                 <div className="effect-catalog-item-name">{effect.name}</div>
                 <div className="effect-catalog-item-desc">{effect.description}</div>

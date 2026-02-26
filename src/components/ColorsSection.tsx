@@ -199,14 +199,11 @@ function ColorRow({
         />
       </div>
 
-      <motion.button
+      <button
         className="btn btn-ghost btn-icon color-remove-btn"
         title="Remove color"
         aria-label="Remove color"
-        layout={false}
         onClick={() => onRemove(index)}
-        whileHover={{ scale: 1.15 }}
-        whileTap={{ scale: 0.9 }}
         dangerouslySetInnerHTML={{ __html: REMOVE_SVG }}
       />
     </Reorder.Item>

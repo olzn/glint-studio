@@ -3,6 +3,7 @@ import type { EffectBlock } from '../types';
 // Generators
 import { gradientEffect } from './generators/gradient';
 import { noiseEffect } from './generators/noise';
+import { voronoiEffect } from './generators/voronoi';
 import { domainWarpEffect } from './generators/domain-warp';
 import { waveEffect } from './generators/wave';
 import { glowWavesEffect } from './generators/glow-waves';
@@ -23,6 +24,7 @@ import { ditherEffect } from './post/dither';
 // UV transforms
 import { pixelateEffect } from './uv/pixelate';
 import { diffuseBlurEffect } from './uv/diffuse-blur';
+import { kaleidoscopeEffect } from './uv/kaleidoscope';
 import { polarEffect } from './uv/polar';
 
 /** All available effect blocks, keyed by id. */
@@ -32,10 +34,12 @@ const allEffects: EffectBlock[] = [
   // UV transforms
   pixelateEffect,
   diffuseBlurEffect,
+  kaleidoscopeEffect,
   polarEffect,
   // Generators
   gradientEffect,
   noiseEffect,
+  voronoiEffect,
   domainWarpEffect,
   waveEffect,
   glowWavesEffect,
