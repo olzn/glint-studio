@@ -269,32 +269,32 @@ export function EffectsSection() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -12, height: 0 }}
                     transition={ITEM_SPRING}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      const itemBlock = getEffect(ae.blockId);
-                      if (itemBlock && itemBlock.category !== dragFromCategory) {
-                        (e as any).dataTransfer.dropEffect = 'none';
-                        return;
-                      }
-                      (e as any).dataTransfer.dropEffect = 'move';
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const itemBlock = getEffect(ae.blockId);
-                      if (!itemBlock || itemBlock.category !== dragFromCategory) return;
-                      const rect = (e.target as HTMLElement)
-                        .closest('.effect-item')
-                        ?.getBoundingClientRect();
-                      let toIndex = flatIndex;
-                      if (rect && (e as any).clientY >= rect.top + rect.height / 2) toIndex++;
-                      if (dragFrom !== -1 && dragFrom !== toIndex) handleReorder(dragFrom, toIndex);
-                      setDragFrom(-1);
-                    }}
                   >
-                    {/* Header */}
+                    {/* Header — regular div handles DnD drop target + expand toggle */}
                     <div
                       className="effect-item-header"
                       style={{ cursor: 'pointer' }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        const itemBlock = getEffect(ae.blockId);
+                        if (itemBlock && itemBlock.category !== dragFromCategory) {
+                          e.dataTransfer.dropEffect = 'none';
+                          return;
+                        }
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const itemBlock = getEffect(ae.blockId);
+                        if (!itemBlock || itemBlock.category !== dragFromCategory) return;
+                        const rect = (e.target as HTMLElement)
+                          .closest('.effect-item')
+                          ?.getBoundingClientRect();
+                        let toIndex = flatIndex;
+                        if (rect && e.clientY >= rect.top + rect.height / 2) toIndex++;
+                        if (dragFrom !== -1 && dragFrom !== toIndex) handleReorder(dragFrom, toIndex);
+                        setDragFrom(-1);
+                      }}
                       onClick={(e) => {
                         const target = e.target as HTMLElement;
                         if (
@@ -364,11 +364,10 @@ export function EffectsSection() {
                       {isExpanded && (
                         <motion.div
                           className="effect-item-controls"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
+                          initial={{ height: 0, opacity: 0, overflow: 'hidden' as const }}
+                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' as const }}
+                          exit={{ height: 0, opacity: 0, overflow: 'hidden' as const }}
                           transition={ITEM_SPRING}
-                          style={{ overflow: 'hidden' }}
                         >
                           <ParamControls
                             params={instanceParams}

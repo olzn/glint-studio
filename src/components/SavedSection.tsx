@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store';
 import {
@@ -35,6 +35,21 @@ export function SavedSection() {
   const set = useStore((s) => s.set);
 
   const refresh = useCallback(() => setSaved(loadSavedShaders()), []);
+
+  // Refresh when another part of the app saves (e.g. Header button, Ctrl+S)
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'glint-studio-library') refresh();
+    };
+    // Listen for custom event dispatched by handleSaveShader
+    const onSave = () => refresh();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('glint-save', onSave);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('glint-save', onSave);
+    };
+  }, [refresh]);
 
   const handleSave = useCallback(() => {
     handleSaveShader();

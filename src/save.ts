@@ -18,5 +18,6 @@ export function handleSaveShader(): void {
     useStore.getState().set({ shaderName: autoName });
   }
   saveShader(useStore.getState());
+  window.dispatchEvent(new Event('glint-save'));
   showToast('Shader saved');
 }
