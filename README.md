@@ -34,8 +34,8 @@ Select a preset from the sidebar to load a pre-configured combination of effects
 
 Click **Add Effect** to open the effect catalog. Effects are grouped by category:
 
-- **UV Transform** — Pixelate, Diffuse Blur, Polar Coordinates
-- **Generators** — Gradient, Noise, Domain Warp, Wave, Glow Waves, Spiral, Floating Particles, LED Bars
+- **UV Transform** — Pixelate, Diffuse Blur, Polar Coordinates, Kaleidoscope
+- **Generators** — Gradient, Noise, Domain Warp, Wave, Glow Waves, Spiral, Floating Particles, LED Bars, Voronoi
 - **Post-Processing** — Brightness, Vignette, Film Grain, CRT Scanlines, Chromatic Aberration, Dot Grid, ASCII, Dither
 
 Each effect has its own parameter controls (sliders, color pickers). Effects can be toggled on/off, removed, or reordered via drag-and-drop within their category.
@@ -71,6 +71,9 @@ Shaders are composed at runtime from effect blocks. Each effect is a self-contai
 
 ## Tech Stack
 
+- [React 19](https://react.dev) — UI layer
+- [Zustand](https://zustand.docs.pmnd.rs) — State management with undo/redo
+- [Motion](https://motion.dev) — Animations and physical drag-and-drop reorder
 - [Vite](https://vite.dev) — Dev server and build
 - [TypeScript](https://www.typescriptlang.org) — Type safety
 - [CodeMirror 6](https://codemirror.net) — Code viewer
