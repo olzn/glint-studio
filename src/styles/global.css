@@ -562,24 +562,11 @@ input[type="range"]::-moz-range-thumb {
   opacity: 0.7;
   transition: opacity 0.15s, color 0.1s;
   user-select: none;
+  touch-action: none;
 }
-
-
 
 .color-drag-handle:active {
   cursor: grabbing;
-}
-
-.color-row.dragging {
-  opacity: 0.35;
-}
-
-.color-row.drag-over-top {
-  box-shadow: 0 -2px 0 0 var(--accent);
-}
-
-.color-row.drag-over-bottom {
-  box-shadow: 0 2px 0 0 var(--accent);
 }
 
 .color-remove-btn {
@@ -588,8 +575,10 @@ input[type="range"]::-moz-range-thumb {
   transition: opacity 0.15s;
   position: absolute;
   right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: fit-content;
 }
 
 .color-row {
@@ -972,25 +961,11 @@ input[type="range"]::-moz-range-thumb {
   opacity: 0.7;
   transition: opacity 0.15s, color 0.1s;
   user-select: none;
+  touch-action: none;
 }
-
-
 
 .effect-drag-handle:active {
   cursor: grabbing;
-}
-
-.effect-item.dragging {
-  opacity: 0.35;
-  border-color: var(--accent);
-}
-
-.effect-item.drag-over-top {
-  box-shadow: 0 -2px 0 0 var(--accent);
-}
-
-.effect-item.drag-over-bottom {
-  box-shadow: 0 2px 0 0 var(--accent);
 }
 
 .effect-item-right {

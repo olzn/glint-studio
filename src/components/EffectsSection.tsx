@@ -1,11 +1,11 @@
-import { useState, useCallback, useMemo, useRef, useEffect, memo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useStore } from '../store';
 import { getEffect, getEffectsByCategory } from '../effects/index';
 import { generateInstanceId } from '../composer';
 import { SidebarSection } from './SidebarSection';
 import { ParamControls } from './ParamControls';
-import type { ActiveEffect, ShaderParam, UniformValue } from '../types';
+import type { ActiveEffect, EffectBlock, ShaderParam, UniformValue } from '../types';
 
 /* ─────────────────────────────────────────────────────────
  * EFFECTS SECTION
@@ -14,7 +14,7 @@ import type { ActiveEffect, ShaderParam, UniformValue } from '../types';
  * - Category grouping (UV Transform, Generators, Post)
  * - Per-effect expand/collapse with param controls
  * - Enable/disable toggle, remove button
- * - Drag-and-drop reorder within category
+ * - Physical drag-and-drop reorder within category (Motion Reorder)
  * - "Add Effect" catalog overlay
  * ───────────────────────────────────────────────────────── */
 
@@ -48,7 +48,6 @@ export function EffectsSection() {
   const activeEffects = useStore((s) => s.activeEffects);
   const setWithHistory = useStore((s) => s.setWithHistory);
   const setParamChange = useStore((s) => s.setParamChange);
-  const set = useStore((s) => s.set);
 
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [expandedEffects, setExpandedEffects] = useState<Set<string>>(new Set());
@@ -91,10 +90,6 @@ export function EffectsSection() {
     }
     return map;
   }, [activeEffects]);
-
-  // DnD state
-  const [dragFrom, setDragFrom] = useState(-1);
-  const [dragFromCategory, setDragFromCategory] = useState('');
 
   // --- Actions ---
 
@@ -176,14 +171,28 @@ export function EffectsSection() {
     [setWithHistory],
   );
 
-  const handleReorder = useCallback(
-    (fromIndex: number, toIndex: number) => {
+  const handleCategoryReorder = useCallback(
+    (catKey: string, newInstanceIds: string[]) => {
       const state = useStore.getState();
-      const effects = [...state.activeEffects];
-      const [moved] = effects.splice(fromIndex, 1);
-      const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
-      effects.splice(insertAt, 0, moved);
-      setWithHistory({ activeEffects: effects, activePresetId: null });
+      const catEffects = state.activeEffects.filter((ae) => {
+        const block = getEffect(ae.blockId);
+        return block && block.category === catKey;
+      });
+      const idToEffect = new Map(catEffects.map((ae) => [ae.instanceId, ae]));
+      const reorderedCat = newInstanceIds.map((id) => idToEffect.get(id)!);
+
+      // Rebuild full array, replacing this category's slice with the new order
+      const result: ActiveEffect[] = [];
+      let catIdx = 0;
+      for (const ae of state.activeEffects) {
+        const block = getEffect(ae.blockId);
+        if (block && block.category === catKey) {
+          result.push(reorderedCat[catIdx++]);
+        } else {
+          result.push(ae);
+        }
+      }
+      setWithHistory({ activeEffects: result, activePresetId: null });
     },
     [setWithHistory],
   );
@@ -213,15 +222,15 @@ export function EffectsSection() {
     const result: Array<{
       catKey: string;
       label: string;
-      effects: Array<{ ae: ActiveEffect; block: ReturnType<typeof getEffect>; flatIndex: number }>;
+      effects: Array<{ ae: ActiveEffect; block: EffectBlock }>;
     }> = [];
 
     for (const { key, label } of CATEGORY_ORDER) {
       const items: typeof result[0]['effects'] = [];
-      for (let i = 0; i < activeEffects.length; i++) {
-        const block = getEffect(activeEffects[i].blockId);
+      for (const ae of activeEffects) {
+        const block = getEffect(ae.blockId);
         if (block && block.category === key) {
-          items.push({ ae: activeEffects[i], block, flatIndex: i });
+          items.push({ ae, block });
         }
       }
       if (items.length > 0) result.push({ catKey: key, label, effects: items });
@@ -248,142 +257,166 @@ export function EffectsSection() {
           <div className="empty-state">No effects added yet</div>
         )}
 
-        {grouped.map(({ catKey, label, effects }) => (
-          <div key={catKey}>
-            <div className="effect-category-header">{label}</div>
+        {grouped.map(({ catKey, label, effects }) => {
+          const catInstanceIds = effects.map((e) => e.ae.instanceId);
+          return (
+            <div key={catKey}>
+              <div className="effect-category-header">{label}</div>
 
-            <AnimatePresence initial={false}>
-              {effects.map(({ ae, block, flatIndex }) => {
-                if (!block) return null;
-                const isExpanded = expandedEffects.has(ae.instanceId);
-
-                const instanceParams = scopedParams.get(ae.instanceId) ?? [];
-
-                return (
-                  <motion.div
-                    key={ae.instanceId}
-                    className={`effect-item${ae.enabled ? '' : ' disabled'}`}
-                    data-instance-id={ae.instanceId}
-                    data-index={flatIndex}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -12, height: 0 }}
-                    transition={ITEM_SPRING}
-                  >
-                    {/* Header — regular div handles DnD drop target + expand toggle */}
-                    <div
-                      className="effect-item-header"
-                      style={{ cursor: 'pointer' }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        const itemBlock = getEffect(ae.blockId);
-                        if (itemBlock && itemBlock.category !== dragFromCategory) {
-                          e.dataTransfer.dropEffect = 'none';
-                          return;
-                        }
-                        e.dataTransfer.dropEffect = 'move';
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const itemBlock = getEffect(ae.blockId);
-                        if (!itemBlock || itemBlock.category !== dragFromCategory) return;
-                        const rect = (e.target as HTMLElement)
-                          .closest('.effect-item')
-                          ?.getBoundingClientRect();
-                        let toIndex = flatIndex;
-                        if (rect && e.clientY >= rect.top + rect.height / 2) toIndex++;
-                        if (dragFrom !== -1 && dragFrom !== toIndex) handleReorder(dragFrom, toIndex);
-                        setDragFrom(-1);
-                      }}
-                      onClick={(e) => {
-                        const target = e.target as HTMLElement;
-                        if (
-                          target.closest('.effect-toggle') ||
-                          target.closest('.effect-drag-handle') ||
-                          target.closest('.effect-remove-btn')
-                        )
-                          return;
-                        toggleExpanded(ae.instanceId);
-                      }}
-                    >
-                      <div className="effect-item-left">
-                        <div
-                          className="effect-drag-handle"
-                          draggable
-                          onDragStart={(e) => {
-                            setDragFrom(flatIndex);
-                            setDragFromCategory(catKey);
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.dataTransfer.setData('text/plain', String(flatIndex));
-                          }}
-                          onDragEnd={() => setDragFrom(-1)}
-                          dangerouslySetInnerHTML={{ __html: DRAG_HANDLE_SVG }}
-                        />
-                        <input
-                          type="checkbox"
-                          className="effect-toggle"
-                          checked={ae.enabled}
-                          onChange={(e) => handleToggleEffect(ae.instanceId, e.target.checked)}
-                        />
-                        <span className="effect-item-name">{block.name}</span>
-                      </div>
-                      <div className="effect-item-right">
-                        <motion.span
-                          className={`effect-chevron${isExpanded ? '' : ' collapsed'}`}
-                          animate={{ rotate: isExpanded ? 0 : -90 }}
-                          transition={{ type: 'spring', visualDuration: 0.15, bounce: 0 }}
-                        >
-                          <svg
-                            width="10"
-                            height="10"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                          >
-                            <path d="M3 4.5L6 7.5L9 4.5" />
-                          </svg>
-                        </motion.span>
-                        <motion.button
-                          className="btn btn-ghost btn-icon effect-remove-btn"
-                          title="Remove effect"
-                          aria-label="Remove effect"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveEffect(ae.instanceId);
-                          }}
-                          whileHover={{ scale: 1.15 }}
-                          whileTap={{ scale: 0.9 }}
-                          dangerouslySetInnerHTML={{ __html: REMOVE_SVG }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Collapsible controls */}
-                    <AnimatePresence initial={false}>
-                      {isExpanded && (
-                        <motion.div
-                          className="effect-item-controls"
-                          initial={{ height: 0, opacity: 0, overflow: 'hidden' as const }}
-                          animate={{ height: 'auto', opacity: 1, overflow: 'visible' as const }}
-                          exit={{ height: 0, opacity: 0, overflow: 'hidden' as const }}
-                          transition={ITEM_SPRING}
-                        >
-                          <ParamControls
-                            params={instanceParams}
-                            onChange={handleParamChange}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        ))}
+              <Reorder.Group
+                axis="y"
+                values={catInstanceIds}
+                onReorder={(newIds) => handleCategoryReorder(catKey, newIds)}
+                as="div"
+                style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}
+              >
+                <AnimatePresence initial={false}>
+                  {effects.map(({ ae, block }) => (
+                    <EffectItem
+                      key={ae.instanceId}
+                      ae={ae}
+                      block={block}
+                      isExpanded={expandedEffects.has(ae.instanceId)}
+                      instanceParams={scopedParams.get(ae.instanceId) ?? []}
+                      onToggle={handleToggleEffect}
+                      onRemove={handleRemoveEffect}
+                      onToggleExpand={toggleExpanded}
+                      onParamChange={handleParamChange}
+                    />
+                  ))}
+                </AnimatePresence>
+              </Reorder.Group>
+            </div>
+          );
+        })}
       </div>
     </SidebarSection>
+  );
+}
+
+// --- Effect Item (uses Reorder.Item + useDragControls) ---
+
+function EffectItem({
+  ae,
+  block,
+  isExpanded,
+  instanceParams,
+  onToggle,
+  onRemove,
+  onToggleExpand,
+  onParamChange,
+}: {
+  ae: ActiveEffect;
+  block: EffectBlock;
+  isExpanded: boolean;
+  instanceParams: ShaderParam[];
+  onToggle: (instanceId: string, enabled: boolean) => void;
+  onRemove: (instanceId: string) => void;
+  onToggleExpand: (instanceId: string) => void;
+  onParamChange: (paramId: string, value: UniformValue) => void;
+}) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={ae.instanceId}
+      dragListener={false}
+      dragControls={dragControls}
+      as="div"
+      layout="position"
+      className={`effect-item${ae.enabled ? '' : ' disabled'}`}
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -12, height: 0 }}
+      transition={ITEM_SPRING}
+      whileDrag={{
+        scale: 1.03,
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+        zIndex: 10,
+      }}
+      style={{ position: 'relative' }}
+    >
+      {/* Header */}
+      <div
+        className="effect-item-header"
+        style={{ cursor: 'pointer' }}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (
+            target.closest('.effect-toggle') ||
+            target.closest('.effect-drag-handle') ||
+            target.closest('.effect-remove-btn')
+          )
+            return;
+          onToggleExpand(ae.instanceId);
+        }}
+      >
+        <div className="effect-item-left">
+          <div
+            className="effect-drag-handle"
+            onPointerDown={(e) => dragControls.start(e)}
+            dangerouslySetInnerHTML={{ __html: DRAG_HANDLE_SVG }}
+          />
+          <input
+            type="checkbox"
+            className="effect-toggle"
+            checked={ae.enabled}
+            onChange={(e) => onToggle(ae.instanceId, e.target.checked)}
+          />
+          <span className="effect-item-name">{block.name}</span>
+        </div>
+        <div className="effect-item-right">
+          <motion.span
+            className={`effect-chevron${isExpanded ? '' : ' collapsed'}`}
+            layout={false}
+            animate={{ rotate: isExpanded ? 0 : -90 }}
+            transition={{ type: 'spring', visualDuration: 0.15, bounce: 0 }}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path d="M3 4.5L6 7.5L9 4.5" />
+            </svg>
+          </motion.span>
+          <motion.button
+            className="btn btn-ghost btn-icon effect-remove-btn"
+            title="Remove effect"
+            aria-label="Remove effect"
+            layout={false}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(ae.instanceId);
+            }}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            dangerouslySetInnerHTML={{ __html: REMOVE_SVG }}
+          />
+        </div>
+      </div>
+
+      {/* Collapsible controls */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            className="effect-item-controls"
+            initial={{ height: 0, opacity: 0, overflow: 'hidden' as const }}
+            animate={{ height: 'auto', opacity: 1, overflow: 'visible' as const }}
+            exit={{ height: 0, opacity: 0, overflow: 'hidden' as const }}
+            transition={ITEM_SPRING}
+          >
+            <ParamControls
+              params={instanceParams}
+              onChange={onParamChange}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Reorder.Item>
   );
 }
 

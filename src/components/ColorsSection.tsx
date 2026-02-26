@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef, memo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useStore } from '../store';
 import { SidebarSection } from './SidebarSection';
 
@@ -11,12 +11,18 @@ const REMOVE_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" 
 
 const PLUS_SVG = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2v8M2 6h8"/></svg>`;
 
+const ITEM_SPRING = {
+  type: 'spring' as const,
+  visualDuration: 0.2,
+  bounce: 0.1,
+};
+
 export function ColorsSection() {
   const colors = useStore((s) => s.colors);
   const setParamChange = useStore((s) => s.setParamChange);
   const setWithHistory = useStore((s) => s.setWithHistory);
 
-  // Stable IDs for color rows (so DnD reorder moves DOM nodes, not remounts)
+  // Stable IDs for color rows (so Reorder tracks items across reorders)
   const nextColorId = useRef(0);
   const colorIds = useRef<number[]>(colors.map(() => nextColorId.current++));
 
@@ -28,10 +34,6 @@ export function ColorsSection() {
   } else if (colorIds.current.length > colors.length) {
     colorIds.current.length = colors.length;
   }
-
-  // DnD state
-  const [dragFrom, setDragFrom] = useState(-1);
-  const [dragOver, setDragOver] = useState<{ index: number; side: 'top' | 'bottom' } | null>(null);
 
   // Read colors from store inside callbacks to avoid stale closures and
   // unstable callback identities (colors changes on every slider drag).
@@ -64,19 +66,15 @@ export function ColorsSection() {
   );
 
   const handleReorder = useCallback(
-    (fromIndex: number, toIndex: number) => {
+    (newIds: number[]) => {
       const cur = useStore.getState().colors;
-      const newColors = [...cur];
-      const [moved] = newColors.splice(fromIndex, 1);
-      const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
-      newColors.splice(insertAt, 0, moved);
+      const oldIds = colorIds.current;
 
-      // Keep IDs in sync so React moves DOM nodes instead of remounting
-      const ids = [...colorIds.current];
-      const [movedId] = ids.splice(fromIndex, 1);
-      ids.splice(insertAt, 0, movedId);
-      colorIds.current = ids;
+      // Map old ID -> index so we can rebuild the colors array in the new order
+      const idToIndex = new Map(oldIds.map((id, i) => [id, i]));
+      const newColors = newIds.map((id) => cur[idToIndex.get(id)!]);
 
+      colorIds.current = newIds;
       setWithHistory({ colors: newColors, activePresetId: null });
     },
     [setWithHistory],
@@ -95,32 +93,26 @@ export function ColorsSection() {
           <div className="empty-state">No colors added</div>
         )}
 
-        <AnimatePresence initial={false}>
-          {colors.map((color, i) => (
-            <ColorRow
-              key={colorIds.current[i]}
-              index={i}
-              color={color}
-              dragFrom={dragFrom}
-              dragOver={dragOver}
-              onColorChange={handleColorChange}
-              onRemove={handleRemoveColor}
-              onDragStart={setDragFrom}
-              onDragOver={setDragOver}
-              onDragEnd={() => {
-                setDragFrom(-1);
-                setDragOver(null);
-              }}
-              onDrop={(toIndex) => {
-                if (dragFrom !== -1 && dragFrom !== toIndex) {
-                  handleReorder(dragFrom, toIndex);
-                }
-                setDragFrom(-1);
-                setDragOver(null);
-              }}
-            />
-          ))}
-        </AnimatePresence>
+        <Reorder.Group
+          axis="y"
+          values={colorIds.current}
+          onReorder={handleReorder}
+          as="div"
+          style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}
+        >
+          <AnimatePresence initial={false}>
+            {colors.map((color, i) => (
+              <ColorRow
+                key={colorIds.current[i]}
+                stableId={colorIds.current[i]}
+                index={i}
+                color={color}
+                onColorChange={handleColorChange}
+                onRemove={handleRemoveColor}
+              />
+            ))}
+          </AnimatePresence>
+        </Reorder.Group>
       </div>
     </SidebarSection>
   );
@@ -128,31 +120,20 @@ export function ColorsSection() {
 
 // --- Color Row ---
 
-interface ColorRowProps {
-  index: number;
-  color: string;
-  dragFrom: number;
-  dragOver: { index: number; side: 'top' | 'bottom' } | null;
-  onColorChange: (index: number, value: string) => void;
-  onRemove: (index: number) => void;
-  onDragStart: (index: number) => void;
-  onDragOver: (state: { index: number; side: 'top' | 'bottom' } | null) => void;
-  onDragEnd: () => void;
-  onDrop: (toIndex: number) => void;
-}
-
-const ColorRow = memo(function ColorRow({
+function ColorRow({
+  stableId,
   index,
   color,
-  dragFrom,
-  dragOver,
   onColorChange,
   onRemove,
-  onDragStart,
-  onDragOver: setDragOverState,
-  onDragEnd,
-  onDrop,
-}: ColorRowProps) {
+}: {
+  stableId: number;
+  index: number;
+  color: string;
+  onColorChange: (index: number, value: string) => void;
+  onRemove: (index: number) => void;
+}) {
+  const dragControls = useDragControls();
   const [hexText, setHexText] = useState(color);
 
   // Sync hex text when color changes from outside (undo, preset, DnD)
@@ -160,54 +141,29 @@ const ColorRow = memo(function ColorRow({
     setHexText(color);
   }, [color]);
 
-  const isDragging = dragFrom === index;
-  const overClass =
-    dragOver?.index === index
-      ? dragOver.side === 'top'
-        ? ' drag-over-top'
-        : ' drag-over-bottom'
-      : '';
-
   return (
-    <motion.div
-      className={`control color-row${isDragging ? ' dragging' : ''}${overClass}`}
+    <Reorder.Item
+      value={stableId}
+      dragListener={false}
+      dragControls={dragControls}
+      as="div"
+      layout="position"
+      className="control color-row"
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8, height: 0 }}
-      transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.1 }}
-      onDragOver={(e) => {
-        e.preventDefault();
-        (e as any).dataTransfer && ((e as any).dataTransfer.dropEffect = 'move');
-        const rect = (e.target as HTMLElement).closest('.color-row')?.getBoundingClientRect();
-        if (rect) {
-          const midY = rect.top + rect.height / 2;
-          setDragOverState({
-            index,
-            side: (e as any).clientY < midY ? 'top' : 'bottom',
-          });
-        }
+      transition={ITEM_SPRING}
+      whileDrag={{
+        scale: 1.03,
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+        zIndex: 10,
       }}
-      onDragLeave={() => setDragOverState(null)}
-      onDrop={(e) => {
-        e.preventDefault();
-        const rect = (e.target as HTMLElement).closest('.color-row')?.getBoundingClientRect();
-        let toIndex = index;
-        if (rect && (e as any).clientY >= rect.top + rect.height / 2) {
-          toIndex++;
-        }
-        onDrop(toIndex);
-      }}
+      style={{ position: 'relative' }}
     >
       {/* Drag handle */}
       <div
         className="color-drag-handle"
-        draggable
-        onDragStart={(e) => {
-          onDragStart(index);
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', String(index));
-        }}
-        onDragEnd={onDragEnd}
+        onPointerDown={(e) => dragControls.start(e)}
         dangerouslySetInnerHTML={{ __html: DRAG_HANDLE_SVG }}
       />
 
@@ -247,11 +203,12 @@ const ColorRow = memo(function ColorRow({
         className="btn btn-ghost btn-icon color-remove-btn"
         title="Remove color"
         aria-label="Remove color"
+        layout={false}
         onClick={() => onRemove(index)}
         whileHover={{ scale: 1.15 }}
         whileTap={{ scale: 0.9 }}
         dangerouslySetInnerHTML={{ __html: REMOVE_SVG }}
       />
-    </motion.div>
+    </Reorder.Item>
   );
-});
+}
