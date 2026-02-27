@@ -1,5 +1,5 @@
 import type { Preset, UniformValue } from '../types';
-import { compose, generateInstanceId, VERTEX_SOURCE } from '../composer';
+import { compose, generateInstanceId, equalStops, VERTEX_SOURCE } from '../composer';
 import { getEffect } from '../effects/index';
 import { hexToVec3 } from '../compiler';
 
@@ -30,7 +30,8 @@ export function renderPresetThumbnail(preset: Preset): string | null {
   }
 
   const colorCount = preset.colors?.length ?? 0;
-  const result = compose(activeEffects, colorCount);
+  const stops = preset.colorStops ?? equalStops(colorCount);
+  const result = compose(activeEffects, colorCount, stops);
 
   // Create temporary canvas + WebGL
   const canvas = document.createElement('canvas');
@@ -98,6 +99,12 @@ export function renderPresetThumbnail(preset: Preset): string | null {
       const [r, g, b] = hexToVec3(colors[i]);
       gl.uniform3f(loc, r, g, b);
     }
+  }
+
+  // Stop uniforms
+  for (let i = 0; i < stops.length; i++) {
+    const loc = gl.getUniformLocation(program, `u_stop${i}`);
+    if (loc) gl.uniform1f(loc, stops[i]);
   }
 
   // Parameter uniforms

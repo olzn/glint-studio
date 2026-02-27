@@ -90,6 +90,7 @@ export function saveShader(state: AppState): SavedShader {
     activeEffects: state.activeEffects,
     paramValues: state.paramValues,
     colors: state.colors,
+    colorStops: state.colorStops,
     exportFunctionName: state.exportFunctionName,
     usesTexture: state.usesTexture,
     vertexType: state.vertexType,
@@ -128,7 +129,7 @@ export function deleteSavedShader(id: string): void {
 }
 
 export function savedShaderToState(saved: SavedShader): Partial<AppState> {
-  return {
+  const result: Partial<AppState> = {
     activePresetId: saved.activePresetId,
     shaderName: saved.name,
     activeEffects: saved.activeEffects,
@@ -139,6 +140,10 @@ export function savedShaderToState(saved: SavedShader): Partial<AppState> {
     vertexType: saved.vertexType,
     exportAsync: saved.exportAsync,
   };
+  if (saved.colorStops) {
+    result.colorStops = saved.colorStops;
+  }
+  return result;
 }
 
 export function renameSavedShader(id: string, newName: string): void {
@@ -151,13 +156,26 @@ export function renameSavedShader(id: string, newName: string): void {
 }
 
 export function encodeShaderUrl(saved: SavedShader): string {
-  const payload = {
+  const payload: Record<string, unknown> = {
     n: saved.name,
     e: saved.activeEffects,
     p: saved.paramValues,
     c: saved.colors,
   };
+  // Only include stops when they differ from equal distribution
+  if (saved.colorStops && saved.colorStops.length === saved.colors.length) {
+    const eq = equalStopsForEncode(saved.colors.length);
+    const isDefault = saved.colorStops.every((s, i) => Math.abs(s - eq[i]) < 0.001);
+    if (!isDefault) {
+      payload.s = saved.colorStops;
+    }
+  }
   return btoa(JSON.stringify(payload));
+}
+
+function equalStopsForEncode(count: number): number[] {
+  if (count <= 1) return count === 1 ? [0.5] : [];
+  return Array.from({ length: count }, (_, i) => i / (count - 1));
 }
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
@@ -208,6 +226,15 @@ function sanitizeColors(raw: unknown): string[] | null {
   return raw as string[];
 }
 
+function sanitizeColorStops(raw: unknown, colorCount: number): number[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  if (raw.length !== colorCount) return undefined;
+  for (const s of raw) {
+    if (typeof s !== 'number' || !isFinite(s) || s < 0 || s > 1) return undefined;
+  }
+  return raw as number[];
+}
+
 export function decodeShaderUrl(hash: string): Partial<AppState> | null {
   try {
     const match = hash.match(/^#s=(.+)$/);
@@ -227,7 +254,12 @@ export function decodeShaderUrl(hash: string): Partial<AppState> | null {
     const rawName = typeof payload.n === 'string' ? payload.n : 'Shared Shader';
     const shaderName = rawName.slice(0, MAX_NAME_LENGTH);
 
-    return { shaderName, activeEffects, paramValues, colors, activePresetId: null };
+    const result: Partial<AppState> = { shaderName, activeEffects, paramValues, colors, activePresetId: null };
+    const colorStops = sanitizeColorStops(payload.s, colors.length);
+    if (colorStops) {
+      result.colorStops = colorStops;
+    }
+    return result;
   } catch {
     return null;
   }

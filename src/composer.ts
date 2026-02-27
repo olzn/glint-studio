@@ -19,7 +19,13 @@ export interface ComposeResult {
  * Returns the GLSL source and the resolved parameter list with
  * instance-scoped uniform names.
  */
-export function compose(activeEffects: ActiveEffect[], colorCount: number = 0): ComposeResult {
+/** Compute equally-spaced stop positions for N colors. */
+export function equalStops(count: number): number[] {
+  if (count <= 1) return count === 1 ? [0.5] : [];
+  return Array.from({ length: count }, (_, i) => i / (count - 1));
+}
+
+export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, colorStops?: number[]): ComposeResult {
   const allParams: ShaderParam[] = [];
   const requiredUtils = new Set<UtilId>();
 
@@ -99,9 +105,14 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0): 
   lines.push('uniform float u_time;');
   lines.push('uniform vec2 u_resolution;');
 
-  // Dynamic color uniforms
+  // Dynamic color + stop uniforms
   for (let i = 0; i < colorCount; i++) {
     lines.push(`uniform vec3 u_color${i};`);
+  }
+  if (colorCount >= 2) {
+    for (let i = 0; i < colorCount; i++) {
+      lines.push(`uniform float u_stop${i};`);
+    }
   }
 
   if (uniformDeclarations.length > 0) {
@@ -227,18 +238,13 @@ function generateColorRamp(colorCount: number): string {
   return u_color0;
 }`;
   }
-  if (colorCount === 2) {
-    return `vec3 colorRamp(float t) {
-  return mix(u_color0, u_color1, clamp(t, 0.0, 1.0));
-}`;
-  }
-  // 3+ colors: chain of mix() calls across segments
+  // 2+ colors: chain of mix() calls using stop uniforms
   const bodyLines: string[] = [];
   bodyLines.push(`vec3 colorRamp(float t) {`);
-  bodyLines.push(`  float _ct = clamp(t, 0.0, 1.0) * ${(colorCount - 1).toFixed(1)};`);
+  bodyLines.push(`  float _ct = clamp(t, 0.0, 1.0);`);
   bodyLines.push(`  vec3 c = u_color0;`);
   for (let i = 1; i < colorCount; i++) {
-    bodyLines.push(`  c = mix(c, u_color${i}, clamp(_ct - ${(i - 1).toFixed(1)}, 0.0, 1.0));`);
+    bodyLines.push(`  c = mix(c, u_color${i}, clamp((_ct - u_stop${i - 1}) / max(u_stop${i} - u_stop${i - 1}, 0.001), 0.0, 1.0));`);
   }
   bodyLines.push(`  return c;`);
   bodyLines.push(`}`);

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useStore } from '../store';
 import { presets, getPreset } from '../presets';
 import { getEffect } from '../effects/index';
-import { generateInstanceId } from '../composer';
+import { generateInstanceId, equalStops } from '../composer';
 import { renderPresetThumbnail } from '../ui/preset-thumbnail';
 import { getMotionValues } from '../hooks/useMotionTuning';
 import { SidebarSection } from './SidebarSection';
@@ -43,12 +43,14 @@ export function PresetsPanel() {
         }
       }
 
+      const colors = preset.colors ?? [];
       setWithHistory({
         activePresetId: preset.id,
         shaderName: preset.name,
         activeEffects,
         paramValues,
-        colors: preset.colors ?? [],
+        colors,
+        colorStops: preset.colorStops ?? equalStops(colors.length),
       });
     },
     [setWithHistory],

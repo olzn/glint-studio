@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../store';
 import { Renderer } from '../renderer';
 import { compose, VERTEX_SOURCE } from '../composer';
-import { syncUniforms, syncColors } from '../uniforms';
+import { syncUniforms, syncColors, syncColorStops } from '../uniforms';
 import type { ComposeResult } from '../composer';
 
 /**
@@ -48,6 +48,7 @@ export function useRenderer(containerRef: React.RefObject<HTMLDivElement | null>
     // Track previous values to detect what changed
     let prevActiveEffects = useStore.getState().activeEffects;
     let prevColors = useStore.getState().colors;
+    let prevColorStops = useStore.getState().colorStops;
     let prevParamValues = useStore.getState().paramValues;
     let prevColorCount = prevColors.length;
 
@@ -57,6 +58,7 @@ export function useRenderer(containerRef: React.RefObject<HTMLDivElement | null>
 
       const effectsChanged = state.activeEffects !== prevActiveEffects;
       const colorsChanged = state.colors !== prevColors;
+      const colorStopsChanged = state.colorStops !== prevColorStops;
       const colorCountChanged = state.colors.length !== prevColorCount;
       const paramsChanged = state.paramValues !== prevParamValues;
 
@@ -65,15 +67,17 @@ export function useRenderer(containerRef: React.RefObject<HTMLDivElement | null>
       // synchronously; without this guard, effectsChanged stays true → infinite recursion.
       prevActiveEffects = state.activeEffects;
       prevColors = state.colors;
+      prevColorStops = state.colorStops;
       prevParamValues = state.paramValues;
       prevColorCount = state.colors.length;
 
       if (effectsChanged || colorCountChanged) {
         compileAndSync(renderer);
-      } else if (colorsChanged || paramsChanged) {
+      } else if (colorsChanged || colorStopsChanged || paramsChanged) {
         const result = composeResultRef.current;
         if (result) {
           if (colorsChanged) syncColors(renderer, state.colors);
+          if (colorStopsChanged) syncColorStops(renderer, state.colorStops);
           if (paramsChanged) syncUniforms(renderer, result.params, state.paramValues);
         }
       }
@@ -85,7 +89,7 @@ export function useRenderer(containerRef: React.RefObject<HTMLDivElement | null>
   // --- Compile helper ---
   const compileAndSync = useCallback((renderer: Renderer) => {
     const state = useStore.getState();
-    const result = compose(state.activeEffects, state.colors.length);
+    const result = compose(state.activeEffects, state.colors.length, state.colorStops);
     composeResultRef.current = result;
 
     const errors = renderer.compile(VERTEX_SOURCE, result.glsl);
@@ -101,6 +105,7 @@ export function useRenderer(containerRef: React.RefObject<HTMLDivElement | null>
         compiledFragmentSource: result.glsl,
       });
       syncColors(renderer, state.colors);
+      syncColorStops(renderer, state.colorStops);
       syncUniforms(renderer, result.params, state.paramValues);
     }
   }, []);

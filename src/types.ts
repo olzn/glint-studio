@@ -54,6 +54,7 @@ export interface Preset {
   effects: { blockId: string }[];
   paramOverrides: Record<string, UniformValue>;
   colors?: string[];
+  colorStops?: number[];
 }
 
 export interface AppState {
@@ -62,6 +63,7 @@ export interface AppState {
   activeEffects: ActiveEffect[];
   paramValues: Record<string, UniformValue>;
   colors: string[];
+  colorStops: number[];
   compiledFragmentSource: string;
   editorOpen: boolean;
   editorHeight: number;
@@ -82,6 +84,7 @@ export interface SavedShader {
   activeEffects: ActiveEffect[];
   paramValues: Record<string, UniformValue>;
   colors: string[];
+  colorStops?: number[];
   exportFunctionName: string;
   usesTexture: boolean;
   vertexType: 'simple' | 'uv';

@@ -37,6 +37,18 @@ export function syncColors(
 }
 
 /**
+ * Sync the dynamic color stop uniforms (u_stop0, u_stop1, ...).
+ */
+export function syncColorStops(
+  renderer: Renderer,
+  stops: number[]
+): void {
+  for (let i = 0; i < stops.length; i++) {
+    renderer.setUniform(`u_stop${i}`, 'float', stops[i]);
+  }
+}
+
+/**
  * Build default param values from a param list.
  */
 export function defaultParamValues(params: ShaderParam[]): Record<string, UniformValue> {

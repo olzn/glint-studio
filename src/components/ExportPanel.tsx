@@ -13,7 +13,7 @@ export function ExportPanel() {
 
   const doExport = useCallback((format: 'ts' | 'html') => {
     const state = useStore.getState();
-    const result = compose(state.activeEffects, state.colors.length);
+    const result = compose(state.activeEffects, state.colors.length, state.colorStops);
 
     let bakedFragment = bakeShader(result.glsl, result.params, state.paramValues);
 
@@ -28,6 +28,18 @@ export function ExportPanel() {
       const [r, g, b] = hexToVec3(state.colors[i]);
       const literal = `vec3(${formatFloat(r)}, ${formatFloat(g)}, ${formatFloat(b)})`;
       bakedFragment = bakedFragment.replace(new RegExp(`\\bu_color${i}\\b`, 'g'), literal);
+    }
+
+    // Bake stop uniforms into literal float values
+    for (let i = 0; i < state.colorStops.length; i++) {
+      bakedFragment = bakedFragment.replace(
+        new RegExp(`^\\s*uniform\\s+float\\s+u_stop${i}\\s*;\\n?`, 'gm'),
+        '',
+      );
+    }
+    for (let i = 0; i < state.colorStops.length; i++) {
+      const literal = formatFloat(state.colorStops[i]);
+      bakedFragment = bakedFragment.replace(new RegExp(`\\bu_stop${i}\\b`, 'g'), literal);
     }
 
     if (format === 'ts') {

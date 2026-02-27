@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
+import { useState, useEffect, useCallback, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useStore } from '../store';
 import { SidebarSection } from './SidebarSection';
 
@@ -19,6 +19,7 @@ const ITEM_SPRING = {
 
 export function ColorsSection() {
   const colors = useStore((s) => s.colors);
+  const colorStops = useStore((s) => s.colorStops);
   const setParamChange = useStore((s) => s.setParamChange);
   const setWithHistory = useStore((s) => s.setWithHistory);
 
@@ -48,17 +49,39 @@ export function ColorsSection() {
   );
 
   const handleAddColor = useCallback(() => {
-    const cur = useStore.getState().colors;
+    const state = useStore.getState();
+    const updatedStops = [...state.colorStops];
     colorIds.current.push(nextColorId.current++);
-    setWithHistory({ colors: [...cur, '#808080'], activePresetId: null });
+
+    // New color always appears on the far right of the gradient bar.
+    // If an existing stop is already at the far right, nudge it left
+    // to the midpoint between its left neighbor and 1.0.
+    for (let i = 0; i < updatedStops.length; i++) {
+      if (updatedStops[i] >= 0.99) {
+        let leftNeighbor = 0;
+        for (let j = 0; j < updatedStops.length; j++) {
+          if (j !== i && updatedStops[j] < updatedStops[i]) {
+            leftNeighbor = Math.max(leftNeighbor, updatedStops[j]);
+          }
+        }
+        updatedStops[i] = Math.round(((leftNeighbor + 1.0) / 2) * 100) / 100;
+      }
+    }
+
+    setWithHistory({
+      colors: [...state.colors, '#808080'],
+      colorStops: [...updatedStops, 1.0],
+      activePresetId: null,
+    });
   }, [setWithHistory]);
 
   const handleRemoveColor = useCallback(
     (index: number) => {
-      const cur = useStore.getState().colors;
+      const state = useStore.getState();
       colorIds.current.splice(index, 1);
       setWithHistory({
-        colors: cur.filter((_, i) => i !== index),
+        colors: state.colors.filter((_, i) => i !== index),
+        colorStops: state.colorStops.filter((_, i) => i !== index),
         activePresetId: null,
       });
     },
@@ -67,17 +90,29 @@ export function ColorsSection() {
 
   const handleReorder = useCallback(
     (newIds: number[]) => {
-      const cur = useStore.getState().colors;
+      const state = useStore.getState();
       const oldIds = colorIds.current;
 
-      // Map old ID -> index so we can rebuild the colors array in the new order
+      // Map old ID -> index so we can rebuild arrays in the new order
       const idToIndex = new Map(oldIds.map((id, i) => [id, i]));
-      const newColors = newIds.map((id) => cur[idToIndex.get(id)!]);
+      const newColors = newIds.map((id) => state.colors[idToIndex.get(id)!]);
 
+      // Keep stops in place — only colors move. The gradient bar always
+      // renders left-to-right in list order, so stops stay positional.
       colorIds.current = newIds;
-      setWithHistory({ colors: newColors, activePresetId: null });
+      setWithHistory({ colors: newColors, colorStops: state.colorStops, activePresetId: null });
     },
     [setWithHistory],
+  );
+
+  const handleStopChange = useCallback(
+    (index: number, value: number) => {
+      const cur = useStore.getState().colorStops;
+      const newStops = [...cur];
+      newStops[index] = value;
+      setParamChange({ colorStops: newStops, activePresetId: null });
+    },
+    [setParamChange],
   );
 
   return (
@@ -86,6 +121,14 @@ export function ColorsSection() {
         <button className="btn add-effect-btn" onClick={handleAddColor}>
           <span dangerouslySetInnerHTML={{ __html: PLUS_SVG }} /> Add Color
         </button>
+      )}
+
+      {colors.length >= 2 && (
+        <GradientBar
+          colors={colors}
+          stops={colorStops}
+          onStopChange={handleStopChange}
+        />
       )}
 
       <div className="control-group">
@@ -115,6 +158,90 @@ export function ColorsSection() {
         </Reorder.Group>
       </div>
     </SidebarSection>
+  );
+}
+
+// --- Gradient Bar with draggable stop handles ---
+
+function GradientBar({
+  colors,
+  stops,
+  onStopChange,
+}: {
+  colors: string[];
+  stops: number[];
+  onStopChange: (index: number, value: number) => void;
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  // Clean up window listeners on unmount
+  useEffect(() => () => cleanupRef.current?.(), []);
+
+  // Build CSS linear-gradient from colors + stops
+  const gradientCSS = colors
+    .map((c, i) => `${c} ${(stops[i] * 100).toFixed(1)}%`)
+    .join(', ');
+
+  const handlePointerDown = useCallback(
+    (index: number, e: ReactPointerEvent) => {
+      e.preventDefault();
+
+      setActiveIndex(index);
+
+      const onMove = (ev: PointerEvent) => {
+        if (!barRef.current) return;
+        const rect = barRef.current.getBoundingClientRect();
+        let t = (ev.clientX - rect.left) / rect.width;
+
+        // Constrain between neighbors (stops are kept sorted by index)
+        const curStops = useStore.getState().colorStops;
+        const min = index > 0 ? curStops[index - 1] + 0.01 : 0;
+        const max = index < curStops.length - 1 ? curStops[index + 1] - 0.01 : 1;
+        t = Math.max(min, Math.min(max, t));
+
+        onStopChange(index, Math.round(t * 100) / 100);
+      };
+
+      const onUp = () => {
+        setActiveIndex(null);
+        cleanupRef.current = null;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+      };
+
+      // Tear down any previous drag (shouldn't happen, but be safe)
+      cleanupRef.current?.();
+      cleanupRef.current = onUp;
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    },
+    [onStopChange],
+  );
+
+  return (
+    <div className="gradient-bar-container">
+      <div
+        ref={barRef}
+        className="gradient-bar"
+        style={{ background: `linear-gradient(to right, ${gradientCSS})` }}
+      />
+      <div className="gradient-handles">
+        {stops.map((stop, i) => (
+          <div
+            key={i}
+            className={`gradient-handle${activeIndex === i ? ' active' : ''}`}
+            style={{
+              left: `${stop * 100}%`,
+              backgroundColor: colors[i],
+            }}
+            onPointerDown={(e) => handlePointerDown(i, e)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

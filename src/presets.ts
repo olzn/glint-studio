@@ -50,8 +50,6 @@ export const glowPreset: Preset = {
     'glow-waves.waveFreq': 5.0,
     'glow-waves.waveSpeed': 0.25,
     'glow-waves.displacement': 0.30,
-    'glow-waves.gradLow': 0.6,
-    'glow-waves.gradHigh': 0.9,
     'glow-waves.brightness': 0.3,
     'glow-waves.breathColor': '#1a0a00',
     'vignette.strength': 0.0,
@@ -59,6 +57,7 @@ export const glowPreset: Preset = {
     'film-grain.intensity': 0.04,
   },
   colors: ['#432cdc', '#ff7130'],
+  colorStops: [0.6, 0.9],
 };
 
 export const cellsPreset: Preset = {

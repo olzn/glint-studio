@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { AppState, ActiveEffect, UniformValue } from './types';
-import { generateInstanceId } from './composer';
+import { generateInstanceId, equalStops } from './composer';
 import { getEffect } from './effects/index';
 import { getPreset } from './presets';
 import { decodeShaderUrl } from './persistence';
@@ -13,7 +13,7 @@ const PARAM_DEBOUNCE_MS = 600;
 
 const UNDOABLE_KEYS: (keyof AppState)[] = [
   'shaderName', 'activePresetId', 'activeEffects', 'paramValues',
-  'colors', 'exportFunctionName',
+  'colors', 'colorStops', 'exportFunctionName',
 ];
 
 // --- Helpers ---
@@ -76,7 +76,8 @@ function buildInitialState(): AppState {
     activePresetId: defaultPreset.id,
     activeEffects: defaultEffects,
     paramValues: defaultParams,
-    colors: ['#432cdc', '#ff7130', '#6110da'],
+    colors: defaultPreset.colors ?? [],
+    colorStops: defaultPreset.colorStops ?? equalStops((defaultPreset.colors ?? []).length),
     compiledFragmentSource: '',
     editorOpen: false,
     editorHeight: 250,
@@ -99,6 +100,11 @@ function buildInitialState(): AppState {
     if (autosave) {
       Object.assign(state, autosave);
     }
+  }
+
+  // Ensure colorStops is always populated and matches colors length
+  if (!state.colorStops || state.colorStops.length !== state.colors.length) {
+    state.colorStops = equalStops(state.colors.length);
   }
 
   return state;
@@ -218,6 +224,7 @@ export const useStore = create<GlintStore>()((set, get) => {
           activeEffects: state.activeEffects,
           paramValues: state.paramValues,
           colors: state.colors,
+          colorStops: state.colorStops,
           exportFunctionName: state.exportFunctionName,
           usesTexture: state.usesTexture,
           vertexType: state.vertexType,

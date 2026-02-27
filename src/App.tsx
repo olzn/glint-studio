@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import 'dialkit/styles.css';
+import { Agentation } from 'agentation';
 import { useRenderer } from './hooks/useRenderer';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutosave } from './hooks/useAutosave';
@@ -19,6 +20,7 @@ export function App() {
       <Header rendererRef={rendererRef} />
       <Sidebar />
       <Preview containerRef={previewContainerRef} />
+      {import.meta.env.DEV && <Agentation />}
     </>
   );
 }

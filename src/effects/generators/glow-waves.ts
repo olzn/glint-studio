@@ -57,30 +57,6 @@ export const glowWavesEffect: EffectBlock = {
       group: 'waves',
     },
     {
-      id: 'gradLow',
-      label: 'Gradient Low',
-      type: 'float',
-      defaultValue: 0.6,
-      min: 0,
-      max: 1,
-      step: 0.01,
-      uniformName: '',
-      glslDefault: '0.6',
-      group: 'blending',
-    },
-    {
-      id: 'gradHigh',
-      label: 'Gradient High',
-      type: 'float',
-      defaultValue: 0.9,
-      min: 0,
-      max: 1,
-      step: 0.01,
-      uniformName: '',
-      glslDefault: '0.9',
-      group: 'blending',
-    },
-    {
       id: 'brightness',
       label: 'Brightness Pulse',
       type: 'float',
@@ -118,23 +94,14 @@ export const glowWavesEffect: EffectBlock = {
   float _w8 = sin(st.x * 0.9 + t * 0.07 + st.y * 0.3 + 7.4) * 0.65;
   float _wave = (_w1 + _w2 + _w3 + _w4 + _w5 + _w6 + _w7 + _w8) / 4.35;
 
-  float _wv1 = sin(st.x * 4.0 + t * 0.20 + 0.7);
-  float _wv2 = sin(st.x * 6.5 - t * 0.22 + st.y * 1.0 + 3.3) * 0.6;
-  float _wv3 = sin(st.x * 2.5 - t * 0.15 + 5.0) * 0.5;
-  float _wv4 = sin(st.y * 3.7 + t * 0.11 + st.x * 1.4 + 2.1) * 0.45;
-  float _wv5 = sin(st.x * 9.2 + t * 0.17 - st.y * 0.8 + 6.3) * 0.25;
-  float _wv6 = sin(st.x * 1.3 - t * 0.09 + st.y * 2.1 + 8.5) * 0.55;
-  float _wave2 = (_wv1 + _wv2 + _wv3 + _wv4 + _wv5 + _wv6) / 3.35;
-
   float _displaceAmount = _intensity * $displacement;
   float _yDisplace = _wave * _displaceAmount;
-  float _xDisplace = _wave2 * _displaceAmount * 0.4;
 
   float _gradY = _guv.y + _yDisplace;
   _gradY = clamp(_gradY, 0.0, 1.0);
 
   float _gradientPos = mix(_guv.y, _gradY, _mask);
-  mixFactor = smoothstep($gradLow, $gradHigh, _gradientPos);
+  mixFactor = _gradientPos;
 }`,
   postMixGlsl: `{
   vec2 _guv2 = uv;
