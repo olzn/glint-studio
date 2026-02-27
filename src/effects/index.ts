@@ -4,12 +4,15 @@ import type { EffectBlock } from '../types';
 import { gradientEffect } from './generators/gradient';
 import { noiseEffect } from './generators/noise';
 import { voronoiEffect } from './generators/voronoi';
+import { causticsEffect } from './generators/caustics';
+import { chladniEffect } from './generators/chladni';
 import { domainWarpEffect } from './generators/domain-warp';
 import { waveEffect } from './generators/wave';
 import { glowWavesEffect } from './generators/glow-waves';
 import { spiralEffect } from './generators/spiral';
 import { particlesEffect } from './generators/particles';
 import { ledBarsEffect } from './generators/led-bars';
+import { dotLattice3dEffect } from './generators/dot-lattice-3d';
 
 // Post-processing
 import { brightnessEffect } from './post/brightness';
@@ -40,12 +43,15 @@ const allEffects: EffectBlock[] = [
   gradientEffect,
   noiseEffect,
   voronoiEffect,
+  causticsEffect,
+  chladniEffect,
   domainWarpEffect,
   waveEffect,
   glowWavesEffect,
   spiralEffect,
   particlesEffect,
   ledBarsEffect,
+  dotLattice3dEffect,
   // Post
   brightnessEffect,
   vignetteEffect,
