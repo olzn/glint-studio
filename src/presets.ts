@@ -51,6 +51,7 @@ export const glowPreset: Preset = {
     'glow-waves.waveSpeed': 0.25,
     'glow-waves.displacement': 0.30,
     'glow-waves.brightness': 0.3,
+    'glow-waves.breathEnabled': 0,
     'glow-waves.breathColor': '#1a0a00',
     'vignette.strength': 0.0,
     'vignette.radius': 0.7,
@@ -58,6 +59,13 @@ export const glowPreset: Preset = {
   },
   colors: ['#432cdc', '#ff7130'],
   colorStops: [0.6, 0.9],
+  palettes: [
+    { id: 'default', name: 'Default', colors: ['#432cdc', '#ff7130'], colorStops: [0.6, 0.9] },
+    { id: 'sunset', name: 'Sunset', colors: ['#1A1751', '#3F2ACD', '#FF8C60'], colorStops: [0.1, 0.63, 0.92] },
+    { id: 'lemon', name: 'Lemon', colors: ['#07052C', '#3F2ACD', '#F5FF9A'], colorStops: [0.1, 0.63, 0.92] },
+    { id: 'lime', name: 'Lime', colors: ['#07052C', '#3F2ACD', '#CBFB6C'], colorStops: [0.1, 0.63, 0.92] },
+    { id: 'mint', name: 'Mint', colors: ['#07052C', '#3F2ACD', '#8CE8AB'], colorStops: [0.1, 0.63, 0.92] },
+  ],
 };
 
 export const cellsPreset: Preset = {

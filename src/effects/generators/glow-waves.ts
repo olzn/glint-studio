@@ -69,8 +69,17 @@ export const glowWavesEffect: EffectBlock = {
       group: 'effects',
     },
     {
+      id: 'breathEnabled',
+      label: 'Glow Color',
+      type: 'bool',
+      defaultValue: 0,
+      uniformName: '',
+      glslDefault: '0.0',
+      group: 'colors',
+    },
+    {
       id: 'breathColor',
-      label: 'Glow Tint',
+      label: 'Glow Color',
       type: 'color',
       defaultValue: '#1a0a00',
       uniformName: '',
@@ -119,7 +128,9 @@ export const glowWavesEffect: EffectBlock = {
   float _brightnessBoost = 1.0 + _intensity2 * $brightness * _brightPulse;
   color *= mix(1.0, _brightnessBoost, _mask2);
 
-  float _breath = smoothstep(-0.2, 0.5, _waveb);
-  color += _intensity2 * $breathColor * _breath;
+  if ($breathEnabled > 0.5) {
+    float _breath = smoothstep(-0.2, 0.5, _waveb);
+    color += _intensity2 * $breathColor * _breath;
+  }
 }`,
 };

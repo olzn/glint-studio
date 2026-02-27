@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { AnimatePresence, Reorder, useDragControls } from 'motion/react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useStore } from '../store';
+import { presets } from '../presets';
+import { equalStops } from '../composer';
 import { SidebarSection } from './SidebarSection';
+import type { PresetPalette } from '../types';
 
 const MAX_COLORS = 5;
 
@@ -17,11 +20,44 @@ const ITEM_SPRING = {
   bounce: 0.1,
 };
 
+function paletteGradient(palette: PresetPalette): string {
+  const stops = palette.colorStops ?? equalStops(palette.colors.length);
+  return `linear-gradient(to right, ${palette.colors
+    .map((c, i) => `${c} ${(stops[i] * 100).toFixed(0)}%`)
+    .join(', ')})`;
+}
+
+// Find palettes available for the current effect chain by matching block IDs
+function findPalettes(activeEffects: { blockId: string }[]): PresetPalette[] | undefined {
+  const blockIds = activeEffects.map((e) => e.blockId).join(',');
+  for (const preset of presets) {
+    if (!preset.palettes || preset.palettes.length <= 1) continue;
+    const presetBlockIds = preset.effects.map((e) => e.blockId).join(',');
+    if (blockIds === presetBlockIds) return preset.palettes;
+  }
+  return undefined;
+}
+
 export function ColorsSection() {
   const colors = useStore((s) => s.colors);
   const colorStops = useStore((s) => s.colorStops);
+  const activeEffects = useStore((s) => s.activeEffects);
   const setParamChange = useStore((s) => s.setParamChange);
   const setWithHistory = useStore((s) => s.setWithHistory);
+
+  // Match current effect chain to a preset with palettes
+  const palettes = findPalettes(activeEffects);
+
+  const [palettesOpen, setPalettesOpen] = useState(false);
+
+  const handlePaletteSelect = useCallback(
+    (palette: PresetPalette) => {
+      const newColors = palette.colors;
+      const newStops = palette.colorStops ?? equalStops(newColors.length);
+      setWithHistory({ colors: newColors, colorStops: newStops });
+    },
+    [setWithHistory],
+  );
 
   // Stable IDs for color rows (so Reorder tracks items across reorders)
   const nextColorId = useRef(0);
@@ -117,6 +153,54 @@ export function ColorsSection() {
 
   return (
     <SidebarSection title="Colors">
+      {palettes && palettes.length > 1 && (
+        <div className="palette-picker">
+          <div
+            className="palette-picker-header"
+            onClick={() => setPalettesOpen((v) => !v)}
+          >
+            <span className="palette-picker-label">Palettes</span>
+            <motion.svg
+              className="palette-picker-chevron"
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              animate={{ rotate: palettesOpen ? 0 : -90 }}
+              transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.1 }}
+            >
+              <path d="M3 4.5L6 7.5L9 4.5" />
+            </motion.svg>
+          </div>
+          <AnimatePresence initial={false}>
+            {palettesOpen && (
+              <motion.div
+                className="palette-picker-content"
+                initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                animate={{ height: 'auto', opacity: 1, overflow: 'visible', transitionEnd: { overflow: 'visible' } }}
+                exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+                transition={{ type: 'spring', visualDuration: 0.2, bounce: 0.1 }}
+              >
+                <div className="preset-palettes">
+                  {palettes.map((palette) => (
+                    <button
+                      key={palette.id}
+                      className="preset-palette-swatch"
+                      title={palette.name}
+                      aria-label={`${palette.name} palette`}
+                      style={{ background: paletteGradient(palette) }}
+                      onClick={() => handlePaletteSelect(palette)}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {colors.length < MAX_COLORS && (
         <button className="btn add-effect-btn" onClick={handleAddColor}>
           <span dangerouslySetInnerHTML={{ __html: PLUS_SVG }} /> Add Color

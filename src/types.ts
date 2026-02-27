@@ -47,6 +47,13 @@ export interface ActiveEffect {
   enabled: boolean;
 }
 
+export interface PresetPalette {
+  id: string;
+  name: string;
+  colors: string[];
+  colorStops?: number[];
+}
+
 export interface Preset {
   id: string;
   name: string;
@@ -55,6 +62,7 @@ export interface Preset {
   paramOverrides: Record<string, UniformValue>;
   colors?: string[];
   colorStops?: number[];
+  palettes?: PresetPalette[];
 }
 
 export interface AppState {
