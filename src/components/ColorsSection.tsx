@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { presets } from '../presets';
 import { equalStops } from '../composer';
 import { SidebarSection } from './SidebarSection';
+import { ColorPickerPopover } from './ColorPickerPopover';
 import type { PresetPalette } from '../types';
 
 const MAX_COLORS = 5;
@@ -383,16 +384,13 @@ function ColorRow({
       </div>
 
       <div className="color-control">
-        <div className="color-swatch" style={{ backgroundColor: color }}>
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => {
-              setHexText(e.target.value);
-              onColorChange(index, e.target.value);
-            }}
-          />
-        </div>
+        <ColorPickerPopover
+          color={color}
+          onChange={(c) => {
+            setHexText(c);
+            onColorChange(index, c);
+          }}
+        />
         <input
           type="text"
           className="color-hex-input"
