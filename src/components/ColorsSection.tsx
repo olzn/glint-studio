@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import { AnimatePresence, Reorder, useDragControls } from 'motion/react';
-import { Slider, ColorControl } from 'dialkit';
 import { useStore } from '../store';
 import { SidebarSection } from './SidebarSection';
 
@@ -151,12 +150,7 @@ export function ColorsSection() {
                 stableId={colorIds.current[i]}
                 index={i}
                 color={color}
-                stop={colorStops[i]}
-                stopMin={i > 0 ? colorStops[i - 1] + 0.01 : 0}
-                stopMax={i < colors.length - 1 ? colorStops[i + 1] - 0.01 : 1}
-                showStop={colors.length >= 2}
                 onColorChange={handleColorChange}
-                onStopChange={handleStopChange}
                 onRemove={handleRemoveColor}
               />
             ))}
@@ -257,26 +251,22 @@ function ColorRow({
   stableId,
   index,
   color,
-  stop,
-  stopMin,
-  stopMax,
-  showStop,
   onColorChange,
-  onStopChange,
   onRemove,
 }: {
   stableId: number;
   index: number;
   color: string;
-  stop: number;
-  stopMin: number;
-  stopMax: number;
-  showStop: boolean;
   onColorChange: (index: number, value: string) => void;
-  onStopChange: (index: number, value: number) => void;
   onRemove: (index: number) => void;
 }) {
   const dragControls = useDragControls();
+  const [hexText, setHexText] = useState(color);
+
+  // Sync hex text when color changes from outside (undo, preset, DnD)
+  useEffect(() => {
+    setHexText(color);
+  }, [color]);
 
   return (
     <Reorder.Item
@@ -304,22 +294,36 @@ function ColorRow({
         dangerouslySetInnerHTML={{ __html: DRAG_HANDLE_SVG }}
       />
 
-      <div className="color-row-controls dialkit-root dialkit-param-controls">
-        <ColorControl
-          label={`Color ${index + 1}`}
-          value={color}
-          onChange={(v) => onColorChange(index, v)}
-        />
-        {showStop && (
-          <Slider
-            label="Position"
-            value={stop}
-            onChange={(v) => onStopChange(index, Math.round(v * 100) / 100)}
-            min={stopMin}
-            max={stopMax}
-            step={0.01}
+      <div className="control-label">
+        <span className="control-label-text">Color {index + 1}</span>
+      </div>
+
+      <div className="color-control">
+        <div className="color-swatch" style={{ backgroundColor: color }}>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => {
+              setHexText(e.target.value);
+              onColorChange(index, e.target.value);
+            }}
           />
-        )}
+        </div>
+        <input
+          type="text"
+          className="color-hex-input"
+          value={hexText}
+          maxLength={7}
+          spellCheck={false}
+          onChange={(e) => {
+            setHexText(e.target.value);
+            let v = e.target.value.trim();
+            if (!v.startsWith('#')) v = '#' + v;
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+              onColorChange(index, v);
+            }
+          }}
+        />
       </div>
 
       <button
