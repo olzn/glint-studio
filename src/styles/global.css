@@ -550,7 +550,7 @@ input[type="range"]::-moz-range-thumb {
 
 .gradient-bar {
   height: 20px;
-  border-radius: var(--radius);
+  border-radius: 99px;
   border: 1px solid var(--border);
 }
 
