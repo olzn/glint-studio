@@ -38,7 +38,7 @@ export const swirlPreset: Preset = {
 
 export const glowPreset: Preset = {
   id: 'glow',
-  name: 'Glow',
+  name: 'Gnosis',
   description: 'Sine-wave displacement with warm glow',
   effects: [
     { blockId: 'glow-waves' },
@@ -303,10 +303,159 @@ export const resonancePreset: Preset = {
   ],
 };
 
+export const moirePreset: Preset = {
+  id: 'moire',
+  name: 'Moiré',
+  description: 'Shimmering interference from overlapping line grids',
+  effects: [
+    { blockId: 'moire-fields' },
+    { blockId: 'vignette' },
+    { blockId: 'film-grain' },
+  ],
+  paramOverrides: {
+    'moire-fields.lineCount': 40,
+    'moire-fields.lineWidth': 0.06,
+    'moire-fields.warp': 0.15,
+    'moire-fields.drift': 0.08,
+    'moire-fields.glow': 0.4,
+    'vignette.strength': 0.4,
+    'vignette.radius': 0.7,
+    'film-grain.intensity': 0.03,
+  },
+  colors: ['#05050f', '#8b5cf6', '#e0e7ff'],
+  colorStops: [0.0, 0.4, 1.0],
+  palettes: [
+    { id: 'default', name: 'Violet', colors: ['#05050f', '#8b5cf6', '#e0e7ff'], colorStops: [0.0, 0.4, 1.0] },
+    { id: 'gold', name: 'Gold', colors: ['#0a0800', '#d97706', '#fef3c7'], colorStops: [0.0, 0.4, 1.0] },
+    { id: 'cyan', name: 'Cyan', colors: ['#020617', '#06b6d4', '#ecfeff'], colorStops: [0.0, 0.4, 1.0] },
+  ],
+};
+
+export const starfieldPreset: Preset = {
+  id: 'starfield',
+  name: 'Starfield',
+  description: 'Parallax star layers with motion streaking',
+  effects: [
+    { blockId: 'starfield' },
+    { blockId: 'vignette' },
+    { blockId: 'film-grain' },
+  ],
+  paramOverrides: {
+    'starfield.layers': 6,
+    'starfield.density': 15,
+    'starfield.speed': 0.1,
+    'starfield.streak': 0.3,
+    'starfield.twinkle': 0.5,
+    'starfield.brightness': 1.5,
+    'starfield.nebula': 0.3,
+    'vignette.strength': 0.3,
+    'vignette.radius': 0.75,
+    'film-grain.intensity': 0.02,
+  },
+  colors: ['#020206', '#6366f1', '#e0e7ff', '#ffffff'],
+  colorStops: [0.0, 0.3, 0.7, 1.0],
+  palettes: [
+    { id: 'default', name: 'Cosmos', colors: ['#020206', '#6366f1', '#e0e7ff', '#ffffff'], colorStops: [0.0, 0.3, 0.7, 1.0] },
+    { id: 'nebula', name: 'Warm Nebula', colors: ['#0a0200', '#dc2626', '#fbbf24', '#fefce8'], colorStops: [0.0, 0.3, 0.65, 1.0] },
+    { id: 'aurora', name: 'Aurora', colors: ['#020a05', '#059669', '#67e8f9', '#f0fdf4'], colorStops: [0.0, 0.3, 0.65, 1.0] },
+  ],
+};
+
+export const waveMeshPreset: Preset = {
+  id: 'wave-mesh',
+  name: 'Wave Mesh',
+  description: 'Perspective wireframe ocean grid',
+  effects: [
+    { blockId: 'wave-mesh' },
+    { blockId: 'chromatic-aberration' },
+    { blockId: 'vignette' },
+  ],
+  paramOverrides: {
+    'wave-mesh.gridSize': 20,
+    'wave-mesh.perspective': 0.6,
+    'wave-mesh.waveFreq': 4.0,
+    'wave-mesh.waveAmp': 0.15,
+    'wave-mesh.waveSpeed': 0.12,
+    'wave-mesh.lineWidth': 0.015,
+    'chromatic-aberration.amount': 0.01,
+    'vignette.strength': 0.45,
+    'vignette.radius': 0.65,
+  },
+  colors: ['#020810', '#0ea5e9', '#e0f2fe'],
+  colorStops: [0.0, 0.4, 1.0],
+  palettes: [
+    { id: 'default', name: 'Ocean Grid', colors: ['#020810', '#0ea5e9', '#e0f2fe'], colorStops: [0.0, 0.4, 1.0] },
+    { id: 'neon', name: 'Neon', colors: ['#050005', '#e879f9', '#fdf4ff'], colorStops: [0.0, 0.4, 1.0] },
+    { id: 'emerald', name: 'Emerald', colors: ['#020a05', '#10b981', '#d1fae5'], colorStops: [0.0, 0.4, 1.0] },
+  ],
+};
+
+export const ripplesPreset: Preset = {
+  id: 'ripples',
+  name: 'Ripples',
+  description: 'Interfering concentric wave sources',
+  effects: [
+    { blockId: 'interference-rings' },
+    { blockId: 'chromatic-aberration' },
+    { blockId: 'vignette' },
+    { blockId: 'film-grain' },
+  ],
+  paramOverrides: {
+    'interference-rings.sources': 4,
+    'interference-rings.frequency': 20,
+    'interference-rings.speed': 0.15,
+    'interference-rings.damping': 1.5,
+    'interference-rings.lineWidth': 0.06,
+    'interference-rings.glow': 0.4,
+    'chromatic-aberration.amount': 0.012,
+    'vignette.strength': 0.4,
+    'vignette.radius': 0.7,
+    'film-grain.intensity': 0.03,
+  },
+  colors: ['#05050a', '#7c3aed', '#c4b5fd', '#f5f3ff'],
+  colorStops: [0.0, 0.3, 0.65, 1.0],
+  palettes: [
+    { id: 'default', name: 'Violet', colors: ['#05050a', '#7c3aed', '#c4b5fd', '#f5f3ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
+    { id: 'infrared', name: 'Infrared', colors: ['#0a0000', '#dc2626', '#fb923c', '#fef9c3'], colorStops: [0.0, 0.3, 0.6, 1.0] },
+    { id: 'arctic', name: 'Arctic', colors: ['#020617', '#0284c7', '#bae6fd', '#f0f9ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
+  ],
+};
+
+export const hexLatticePreset: Preset = {
+  id: 'hex-lattice',
+  name: 'Hex Lattice',
+  description: 'Honeycomb grid with glowing edges and pulse propagation',
+  effects: [
+    { blockId: 'hex-lattice' },
+    { blockId: 'vignette' },
+    { blockId: 'film-grain' },
+  ],
+  paramOverrides: {
+    'hex-lattice.density': 12,
+    'hex-lattice.perspective': 0.6,
+    'hex-lattice.edgeWidth': 0.06,
+    'hex-lattice.glow': 0.5,
+    'hex-lattice.cellFill': 0.3,
+    'hex-lattice.pulseSpeed': 0.15,
+    'hex-lattice.pulseFreq': 5.0,
+    'hex-lattice.accentEnabled': 0,
+    'vignette.strength': 0.5,
+    'vignette.radius': 0.6,
+    'film-grain.intensity': 0.04,
+  },
+  colors: ['#0a0a0f', '#c4b5fd'],
+  palettes: [
+    { id: 'default', name: 'Ghost', colors: ['#0a0a0f', '#c4b5fd'] },
+    { id: 'amber', name: 'Amber', colors: ['#0a0800', '#fbbf24'] },
+    { id: 'cyan', name: 'Cyan', colors: ['#020617', '#22d3ee'] },
+  ],
+};
+
 export const presets: Preset[] = [
   blankPreset, swirlPreset, glowPreset,
   interferencePreset, gemPreset, deepPreset, signalPreset,
   latticePreset, poolPreset, miragePreset, resonancePreset,
+  moirePreset, starfieldPreset, waveMeshPreset, ripplesPreset, hexLatticePreset,
 ];
 
 export function getPreset(id: string): Preset | undefined {

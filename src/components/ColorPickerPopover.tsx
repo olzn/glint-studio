@@ -18,13 +18,22 @@ export function ColorPickerPopover({
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [flipped, setFlipped] = useState(false);
   const swatchRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const updatePosition = useCallback(() => {
     if (!swatchRef.current) return;
     const rect = swatchRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 6, left: rect.left });
+    const popoverHeight = 220;
+    const gap = 6;
+    const spaceBelow = window.innerHeight - rect.bottom - gap;
+    const flip = spaceBelow < popoverHeight && rect.top - gap >= popoverHeight;
+    setFlipped(flip);
+    setPos({
+      top: flip ? rect.top - popoverHeight - gap : rect.bottom + gap,
+      left: rect.left,
+    });
   }, []);
 
   // Position popover when opening
@@ -48,15 +57,14 @@ export function ColorPickerPopover({
     return () => document.removeEventListener('mousedown', handleMouseDown);
   }, [open]);
 
-  // Close on sidebar scroll
+  // Reposition on sidebar scroll
   useEffect(() => {
     if (!open) return;
     const sidebar = swatchRef.current?.closest('.sidebar-scroll');
     if (!sidebar) return;
-    const handleScroll = () => setOpen(false);
-    sidebar.addEventListener('scroll', handleScroll);
-    return () => sidebar.removeEventListener('scroll', handleScroll);
-  }, [open]);
+    sidebar.addEventListener('scroll', updatePosition);
+    return () => sidebar.removeEventListener('scroll', updatePosition);
+  }, [open, updatePosition]);
 
   return (
     <div className="color-swatch" ref={swatchRef} style={{ backgroundColor: color }} onClick={() => setOpen((v) => !v)}>
@@ -66,7 +74,7 @@ export function ColorPickerPopover({
             <motion.div
               ref={popoverRef}
               className="color-picker-popover"
-              style={{ position: 'fixed', top: pos.top, left: pos.left }}
+              style={{ position: 'fixed', top: pos.top, left: pos.left, transformOrigin: flipped ? 'bottom left' : 'top left' }}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}

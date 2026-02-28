@@ -519,7 +519,6 @@ input[type="range"]::-moz-range-thumb {
   border-radius: var(--radius-md);
   padding: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  transform-origin: top left;
 }
 
 .color-picker-popover .react-colorful {
