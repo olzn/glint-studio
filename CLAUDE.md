@@ -34,7 +34,7 @@ No test runner. Verify changes with `npm run build` and browser testing.
 
 The app splits into a **framework-agnostic core** (~70%) and a **React UI layer**:
 
-- **Core:** `types.ts`, `composer.ts` (GLSL assembly), `compiler.ts` (GLSL preprocessing), `renderer.ts` (WebGL), `uniforms.ts`, `persistence.ts` (localStorage + URL encode/decode), `presets.ts`, `effects/` (24 effect blocks), `export/` (bake + generate TS/HTML)
+- **Core:** `types.ts`, `composer.ts` (GLSL assembly), `compiler.ts` (GLSL preprocessing), `renderer.ts` (WebGL), `uniforms.ts`, `persistence.ts` (localStorage + URL encode/decode), `presets.ts`, `effects/` (28 effect blocks), `export/` (bake + generate TS/HTML)
 - **UI:** `store.ts` (Zustand), `App.tsx` → Header + Sidebar + Preview, 13 components in `components/`, 4 hooks in `hooks/` (`useRenderer`, `useKeyboardShortcuts`, `useAutosave`, `useMotionTuning`)
 
 ### Data flow

@@ -8,7 +8,7 @@ A browser-based WebGL shader composer with a modular effect system, real-time pr
 
 - **Modular effects** — Build shaders by combining self-contained effect blocks (generators, post-processing, UV transforms)
 - **Real-time preview** — WebGL canvas with play/pause, reset, and adjustable time scale
-- **Presets** — Blank, Swirl, Glow, Cells, Neon, Silk, Mist, Prism, and Signal as starting points
+- **Presets** — 16 curated presets with palette variants as starting points
 - **Generator layering** — Multiple generator effects blend together using contrast-based compositing
 - **Code viewer** — Read-only CodeMirror 6 editor showing the composed GLSL output
 - **Export** — Generate self-contained TypeScript functions or standalone HTML files with baked parameter values
@@ -35,7 +35,7 @@ Select a preset from the sidebar to load a pre-configured combination of effects
 Click **Add Effect** to open the effect catalog. Effects are grouped by category:
 
 - **UV Transform** — Pixelate, Diffuse Blur, Polar Coordinates, Kaleidoscope
-- **Generators** — Gradient, Noise, Domain Warp, Wave, Glow Waves, Spiral, Particles, LED Bars, Voronoi
+- **Generators** — Gradient, Noise, Voronoi, Caustics, Chladni, Domain Warp, Wave, Glow Waves, Spiral, LED Bars, Dot Lattice 3D, Moiré Fields, Starfield, Wave Mesh, Interference Rings, Hex Lattice
 - **Post-Processing** — Brightness, Vignette, Film Grain, CRT Scanlines, Chromatic Aberration, Dot Grid, ASCII, Dither
 
 Each effect has its own parameter controls (sliders, color pickers). Effects can be toggled on/off, removed, or reordered via drag-and-drop within their category.

@@ -2,10 +2,10 @@ import { useCallback, memo } from 'react';
 import {
   Slider,
   Toggle,
-  ColorControl as DKColorControl,
   SelectControl as DKSelectControl,
 } from 'dialkit';
 import { useStore } from '../store';
+import { ColorPickerPopover } from './ColorPickerPopover';
 import type { ShaderParam, UniformValue } from '../types';
 
 /* ─────────────────────────────────────────────────────────
@@ -48,11 +48,15 @@ function ParamControl({ param, onChange }: ParamControlProps) {
   switch (param.type) {
     case 'color':
       return (
-        <DKColorControl
-          label={param.label}
-          value={value as string}
-          onChange={(v) => onChange(param.id, v)}
-        />
+        <div className="dialkit-color-control">
+          <span className="dialkit-color-label">{param.label}</span>
+          <div className="dialkit-color-inputs">
+            <ColorPickerPopover
+              color={value as string}
+              onChange={(v) => onChange(param.id, v)}
+            />
+          </div>
+        </div>
       );
     case 'vec2':
       return <Vec2Control param={param} value={value as [number, number]} onChange={onChange} />;

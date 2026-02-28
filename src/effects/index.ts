@@ -10,9 +10,13 @@ import { domainWarpEffect } from './generators/domain-warp';
 import { waveEffect } from './generators/wave';
 import { glowWavesEffect } from './generators/glow-waves';
 import { spiralEffect } from './generators/spiral';
-import { particlesEffect } from './generators/particles';
 import { ledBarsEffect } from './generators/led-bars';
 import { dotLattice3dEffect } from './generators/dot-lattice-3d';
+import { moireFieldsEffect } from './generators/moire-fields';
+import { starfieldEffect } from './generators/starfield';
+import { waveMeshEffect } from './generators/wave-mesh';
+import { interferenceRingsEffect } from './generators/interference-rings';
+import { hexLatticeEffect } from './generators/hex-lattice';
 
 // Post-processing
 import { brightnessEffect } from './post/brightness';
@@ -49,9 +53,13 @@ const allEffects: EffectBlock[] = [
   waveEffect,
   glowWavesEffect,
   spiralEffect,
-  particlesEffect,
   ledBarsEffect,
   dotLattice3dEffect,
+  moireFieldsEffect,
+  starfieldEffect,
+  waveMeshEffect,
+  interferenceRingsEffect,
+  hexLatticeEffect,
   // Post
   brightnessEffect,
   vignetteEffect,
