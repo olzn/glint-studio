@@ -14,7 +14,6 @@ import { ledBarsEffect } from './generators/led-bars';
 import { dotLattice3dEffect } from './generators/dot-lattice-3d';
 import { moireFieldsEffect } from './generators/moire-fields';
 import { starfieldEffect } from './generators/starfield';
-import { hexLatticeEffect } from './generators/hex-lattice';
 import { terrainFieldEffect } from './generators/terrain-field';
 
 // Post-processing
@@ -22,7 +21,6 @@ import { brightnessEffect } from './post/brightness';
 import { vignetteEffect } from './post/vignette';
 import { filmGrainEffect } from './post/film-grain';
 import { crtScanlinesEffect } from './post/crt-scanlines';
-import { chromaticAberrationEffect } from './post/chromatic-aberration';
 import { dotGridEffect } from './post/dot-grid';
 import { asciiEffect } from './post/ascii';
 import { ditherEffect } from './post/dither';
@@ -56,14 +54,12 @@ const allEffects: EffectBlock[] = [
   dotLattice3dEffect,
   moireFieldsEffect,
   starfieldEffect,
-  hexLatticeEffect,
   terrainFieldEffect,
   // Post
   brightnessEffect,
   vignetteEffect,
   filmGrainEffect,
   crtScanlinesEffect,
-  chromaticAberrationEffect,
   dotGridEffect,
   asciiEffect,
   ditherEffect,
