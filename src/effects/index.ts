@@ -14,9 +14,8 @@ import { ledBarsEffect } from './generators/led-bars';
 import { dotLattice3dEffect } from './generators/dot-lattice-3d';
 import { moireFieldsEffect } from './generators/moire-fields';
 import { starfieldEffect } from './generators/starfield';
-import { waveMeshEffect } from './generators/wave-mesh';
-import { interferenceRingsEffect } from './generators/interference-rings';
 import { hexLatticeEffect } from './generators/hex-lattice';
+import { terrainFieldEffect } from './generators/terrain-field';
 
 // Post-processing
 import { brightnessEffect } from './post/brightness';
@@ -57,9 +56,8 @@ const allEffects: EffectBlock[] = [
   dotLattice3dEffect,
   moireFieldsEffect,
   starfieldEffect,
-  waveMeshEffect,
-  interferenceRingsEffect,
   hexLatticeEffect,
+  terrainFieldEffect,
   // Post
   brightnessEffect,
   vignetteEffect,

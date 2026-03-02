@@ -740,6 +740,30 @@ input[type="range"]::-moz-range-thumb {
   flex-direction: column;
 }
 
+.random-shader-btn {
+  width: 100%;
+  padding: 8px 0;
+  margin-top: var(--space-2);
+  border-style: dashed;
+  border-color: var(--border-field);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+
+.add-color-btn {
+  width: 100%;
+  padding: 8px 0;
+  margin-top: var(--space-2);
+  border-style: dashed;
+  border-color: var(--border-field);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+
 .preset-row {
   display: flex;
   align-items: center;
@@ -1155,17 +1179,65 @@ input[type="range"]::-moz-range-thumb {
 
 /* Category group headers inside effects list */
 .effect-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-dim);
+  color: var(--text-muted);
   padding: 6px 2px 4px;
 }
 
 .effect-category-header:not(:first-child) {
   margin-top: 8px;
+}
+
+.category-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  padding: 0 8px 0 6px;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.category-add-btn:hover {
+  color: var(--text-secondary);
+}
+
+.category-add-btn:active {
+  transform: scale(0.96);
+}
+
+.category-add-btn.open {
+  color: var(--text-secondary);
+}
+
+.category-add-btn svg {
+  width: 9px;
+  height: 9px;
+}
+
+.category-dropdown {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+}
+
+.category-dropdown-inner {
+  padding: 4px 0;
 }
 
 .effect-remove-btn {
@@ -1199,64 +1271,8 @@ input[type="range"]::-moz-range-thumb {
 
 
 /* ═══════════════════════════════════════════════ */
-/*  Add Effect / Add Color Buttons                */
+/*  Effect Catalog Items (reused in dropdowns)    */
 /* ═══════════════════════════════════════════════ */
-
-.add-effect-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 0;
-  border-style: solid;
-  border-color: var(--border-field);
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  margin-top: var(--space-1);
-  margin-bottom: var(--space-3);
-  font-size: var(--text-xs);
-}
-
-.add-effect-btn span {
-  display: inline-flex;
-  align-items: center;
-}
-
-
-
-/* ═══════════════════════════════════════════════ */
-/*  Effect Catalog                                */
-/* ═══════════════════════════════════════════════ */
-
-.effect-catalog {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-3);
-  overflow: hidden;
-}
-
-.effect-catalog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.effect-catalog-category {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
-  padding: 8px 12px 4px;
-}
 
 .effect-catalog-item {
   padding: 6px 12px;
@@ -1471,12 +1487,6 @@ input[type="range"]::-moz-range-thumb {
 
   .effect-item-controls .control:hover {
     border-color: transparent;
-  }
-
-  .add-effect-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-subtle);
   }
 
   .effect-catalog-item:hover {
