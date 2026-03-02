@@ -73,7 +73,6 @@ export const interferencePreset: Preset = {
   effects: [
     { blockId: 'kaleidoscope' },
     { blockId: 'chladni' },
-    { blockId: 'chromatic-aberration' },
     { blockId: 'vignette' },
   ],
   paramOverrides: {
@@ -85,7 +84,6 @@ export const interferencePreset: Preset = {
     'chladni.lineWidth': 0.05,
     'chladni.glow': 0.5,
     'chladni.layers': 1,
-    'chromatic-aberration.amount': 0.012,
     'vignette.strength': 0.45,
     'vignette.radius': 0.65,
   },
@@ -105,7 +103,6 @@ export const gemPreset: Preset = {
   effects: [
     { blockId: 'kaleidoscope' },
     { blockId: 'caustics' },
-    { blockId: 'chromatic-aberration' },
     { blockId: 'vignette' },
   ],
   paramOverrides: {
@@ -117,7 +114,6 @@ export const gemPreset: Preset = {
     'caustics.sharpness': 12.0,
     'caustics.jitter': 0.85,
     'caustics.distortion': 0.3,
-    'chromatic-aberration.amount': 0.015,
     'vignette.strength': 0.45,
     'vignette.radius': 0.65,
   },
@@ -239,7 +235,6 @@ export const miragePreset: Preset = {
   effects: [
     { blockId: 'polar' },
     { blockId: 'caustics' },
-    { blockId: 'chromatic-aberration' },
     { blockId: 'vignette' },
   ],
   paramOverrides: {
@@ -251,7 +246,6 @@ export const miragePreset: Preset = {
     'caustics.sharpness': 12.0,
     'caustics.jitter': 0.9,
     'caustics.distortion': 0.25,
-    'chromatic-aberration.amount': 0.018,
     'vignette.strength': 0.5,
     'vignette.radius': 0.6,
   },
@@ -264,54 +258,31 @@ export const miragePreset: Preset = {
   ],
 };
 
-export const resonancePreset: Preset = {
-  id: 'resonance',
-  name: 'Resonance',
-  description: 'Morphing Chladni standing wave patterns',
+export const warpPreset: Preset = {
+  id: 'warp',
+  name: 'The Warp',
+  description: 'Polar-warped moiré interference tunnel',
   effects: [
-    { blockId: 'chladni' },
-    { blockId: 'vignette' },
-  ],
-  paramOverrides: {
-    'chladni.modeA': 5.0,
-    'chladni.modeB': 3.0,
-    'chladni.morph': 0.15,
-    'chladni.lineWidth': 0.06,
-    'chladni.glow': 0.4,
-    'chladni.layers': 1,
-    'vignette.strength': 0.4,
-    'vignette.radius': 0.7,
-  },
-  colors: ['#05050f', '#6d28d9', '#c4b5fd', '#f5f3ff'],
-  colorStops: [0.0, 0.3, 0.65, 1.0],
-  palettes: [
-    { id: 'default', name: 'Violet Resonance', colors: ['#05050f', '#6d28d9', '#c4b5fd', '#f5f3ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-    { id: 'gold', name: 'Sacred Gold', colors: ['#0a0800', '#b45309', '#fbbf24', '#fef9c3'], colorStops: [0.0, 0.3, 0.6, 1.0] },
-    { id: 'ice', name: 'Frozen', colors: ['#020617', '#0ea5e9', '#bae6fd', '#f0f9ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-  ],
-};
-
-export const moirePreset: Preset = {
-  id: 'moire',
-  name: 'Moiré',
-  description: 'Shimmering interference from overlapping line grids',
-  effects: [
+    { blockId: 'polar' },
     { blockId: 'moire-fields' },
     { blockId: 'vignette' },
   ],
   paramOverrides: {
+    'polar.scale': 2.52,
+    'polar.rotation': 0,
     'moire-fields.lineCount': 40,
-    'moire-fields.lineWidth': 0.06,
-    'moire-fields.warp': 0.15,
-    'moire-fields.drift': 0.08,
-    'moire-fields.glow': 0.4,
+    'moire-fields.lineWidth': 0.07,
+    'moire-fields.rotation': 66,
+    'moire-fields.warp': 0.12,
+    'moire-fields.drift': 0.1,
+    'moire-fields.glow': 0.67,
     'vignette.strength': 0.4,
     'vignette.radius': 0.7,
   },
-  colors: ['#05050f', '#8b5cf6', '#e0e7ff'],
+  colors: ['#05050f', '#713dff', '#e0e7ff'],
   colorStops: [0.0, 0.4, 1.0],
   palettes: [
-    { id: 'default', name: 'Violet', colors: ['#05050f', '#8b5cf6', '#e0e7ff'], colorStops: [0.0, 0.4, 1.0] },
+    { id: 'default', name: 'Violet', colors: ['#05050f', '#713dff', '#e0e7ff'], colorStops: [0.0, 0.4, 1.0] },
     { id: 'gold', name: 'Gold', colors: ['#0a0800', '#d97706', '#fef3c7'], colorStops: [0.0, 0.4, 1.0] },
     { id: 'cyan', name: 'Cyan', colors: ['#020617', '#06b6d4', '#ecfeff'], colorStops: [0.0, 0.4, 1.0] },
   ],
@@ -344,34 +315,6 @@ export const starfieldPreset: Preset = {
     { id: 'default', name: 'Cosmos', colors: ['#020206', '#6366f1', '#e0e7ff', '#ffffff'], colorStops: [0.0, 0.3, 0.7, 1.0] },
     { id: 'nebula', name: 'Warm Nebula', colors: ['#0a0200', '#dc2626', '#fbbf24', '#fefce8'], colorStops: [0.0, 0.3, 0.65, 1.0] },
     { id: 'aurora', name: 'Aurora', colors: ['#020a05', '#059669', '#67e8f9', '#f0fdf4'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-  ],
-};
-
-export const hexLatticePreset: Preset = {
-  id: 'hex-lattice',
-  name: 'Hex Lattice',
-  description: 'Honeycomb grid with glowing edges and pulse propagation',
-  effects: [
-    { blockId: 'hex-lattice' },
-    { blockId: 'vignette' },
-  ],
-  paramOverrides: {
-    'hex-lattice.density': 12,
-    'hex-lattice.perspective': 0.6,
-    'hex-lattice.edgeWidth': 0.06,
-    'hex-lattice.glow': 0.5,
-    'hex-lattice.cellFill': 0.3,
-    'hex-lattice.pulseSpeed': 0.15,
-    'hex-lattice.pulseFreq': 5.0,
-    'hex-lattice.accentEnabled': 0,
-    'vignette.strength': 0.5,
-    'vignette.radius': 0.6,
-  },
-  colors: ['#0a0a0f', '#c4b5fd'],
-  palettes: [
-    { id: 'default', name: 'Ghost', colors: ['#0a0a0f', '#c4b5fd'] },
-    { id: 'amber', name: 'Amber', colors: ['#0a0800', '#fbbf24'] },
-    { id: 'cyan', name: 'Cyan', colors: ['#020617', '#22d3ee'] },
   ],
 };
 
@@ -444,8 +387,8 @@ export const godheadPreset: Preset = {
 export const presets: Preset[] = [
   blankPreset, swirlPreset, glowPreset,
   interferencePreset, gemPreset, deepPreset, signalPreset,
-  latticePreset, poolPreset, miragePreset, resonancePreset,
-  moirePreset, starfieldPreset, hexLatticePreset, topoPreset,
+  latticePreset, poolPreset, miragePreset,
+  warpPreset, starfieldPreset, topoPreset,
   godheadPreset,
 ];
 

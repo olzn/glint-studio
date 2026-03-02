@@ -35,8 +35,8 @@ Select a preset from the sidebar to load a pre-configured combination of effects
 Click **Add Effect** to open the effect catalog. Effects are grouped by category:
 
 - **UV Transform** — Pixelate, Diffuse Blur, Polar Coordinates, Kaleidoscope
-- **Generators** — Gradient, Noise, Voronoi, Caustics, Chladni, Domain Warp, Wave, Glow Waves, Spiral, LED Bars, Dot Lattice 3D, Moiré Fields, Starfield, Wave Mesh, Interference Rings, Hex Lattice
-- **Post-Processing** — Brightness, Vignette, Film Grain, CRT Scanlines, Chromatic Aberration, Dot Grid, ASCII, Dither
+- **Generators** — Gradient, Noise, Voronoi, Caustics, Chladni, Domain Warp, Wave, Glow Waves, Spiral, LED Bars, Dot Lattice 3D, Moiré Fields, Starfield, Terrain Field
+- **Post-Processing** — Brightness, Vignette, Film Grain, CRT Scanlines, Dot Grid, ASCII, Dither
 
 Each effect has its own parameter controls (sliders, color pickers). Effects can be toggled on/off, removed, or reordered via drag-and-drop within their category.
 
