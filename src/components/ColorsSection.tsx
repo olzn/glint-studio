@@ -202,12 +202,6 @@ export function ColorsSection() {
         </div>
       )}
 
-      {colors.length < MAX_COLORS && (
-        <button className="btn add-effect-btn" onClick={handleAddColor}>
-          <span dangerouslySetInnerHTML={{ __html: PLUS_SVG }} /> Add Color
-        </button>
-      )}
-
       {colors.length >= 2 && (
         <GradientBar
           colors={colors}
@@ -242,6 +236,12 @@ export function ColorsSection() {
           </AnimatePresence>
         </Reorder.Group>
       </div>
+
+      {colors.length < MAX_COLORS && (
+        <button className="btn add-color-btn" onClick={handleAddColor}>
+          <span dangerouslySetInnerHTML={{ __html: PLUS_SVG }} /> Add Color
+        </button>
+      )}
     </SidebarSection>
   );
 }

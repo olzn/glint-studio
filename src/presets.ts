@@ -43,7 +43,6 @@ export const glowPreset: Preset = {
   effects: [
     { blockId: 'glow-waves' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'glow-waves.maskStart': 0.45,
@@ -55,7 +54,6 @@ export const glowPreset: Preset = {
     'glow-waves.breathColor': '#1a0a00',
     'vignette.strength': 0.0,
     'vignette.radius': 0.7,
-    'film-grain.intensity': 0.04,
   },
   colors: ['#432cdc', '#ff7130'],
   colorStops: [0.6, 0.9],
@@ -141,7 +139,6 @@ export const deepPreset: Preset = {
     { blockId: 'dot-lattice-3d' },
     { blockId: 'caustics' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'dot-lattice-3d.density': 15,
@@ -159,7 +156,6 @@ export const deepPreset: Preset = {
     'caustics.distortion': 0.4,
     'vignette.strength': 0.5,
     'vignette.radius': 0.6,
-    'film-grain.intensity': 0.03,
   },
   colors: ['#020814', '#0c4a6e', '#22d3ee', '#ecfeff'],
   colorStops: [0.0, 0.3, 0.7, 1.0],
@@ -199,12 +195,10 @@ export const latticePreset: Preset = {
   effects: [
     { blockId: 'dot-lattice-3d' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'vignette.strength': 0.5,
     'vignette.radius': 0.6,
-    'film-grain.intensity': 0.04,
   },
   colors: ['#0a0a0f', '#e0e8ff'],
 };
@@ -217,7 +211,6 @@ export const poolPreset: Preset = {
     { blockId: 'caustics' },
     { blockId: 'brightness' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'caustics.scale': 5.0,
@@ -229,7 +222,6 @@ export const poolPreset: Preset = {
     'brightness.amount': 0.05,
     'vignette.strength': 0.35,
     'vignette.radius': 0.75,
-    'film-grain.intensity': 0.02,
   },
   colors: ['#051428', '#0a5e8c', '#4dd9e8', '#e0fffe'],
   colorStops: [0.0, 0.35, 0.7, 1.0],
@@ -249,7 +241,6 @@ export const miragePreset: Preset = {
     { blockId: 'caustics' },
     { blockId: 'chromatic-aberration' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'polar.scale': 1.5,
@@ -263,7 +254,6 @@ export const miragePreset: Preset = {
     'chromatic-aberration.amount': 0.018,
     'vignette.strength': 0.5,
     'vignette.radius': 0.6,
-    'film-grain.intensity': 0.02,
   },
   colors: ['#0a0010', '#6d28d9', '#f472b6', '#fdf4ff'],
   colorStops: [0.0, 0.3, 0.65, 1.0],
@@ -281,7 +271,6 @@ export const resonancePreset: Preset = {
   effects: [
     { blockId: 'chladni' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'chladni.modeA': 5.0,
@@ -292,7 +281,6 @@ export const resonancePreset: Preset = {
     'chladni.layers': 1,
     'vignette.strength': 0.4,
     'vignette.radius': 0.7,
-    'film-grain.intensity': 0.03,
   },
   colors: ['#05050f', '#6d28d9', '#c4b5fd', '#f5f3ff'],
   colorStops: [0.0, 0.3, 0.65, 1.0],
@@ -310,7 +298,6 @@ export const moirePreset: Preset = {
   effects: [
     { blockId: 'moire-fields' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'moire-fields.lineCount': 40,
@@ -320,7 +307,6 @@ export const moirePreset: Preset = {
     'moire-fields.glow': 0.4,
     'vignette.strength': 0.4,
     'vignette.radius': 0.7,
-    'film-grain.intensity': 0.03,
   },
   colors: ['#05050f', '#8b5cf6', '#e0e7ff'],
   colorStops: [0.0, 0.4, 1.0],
@@ -361,66 +347,6 @@ export const starfieldPreset: Preset = {
   ],
 };
 
-export const waveMeshPreset: Preset = {
-  id: 'wave-mesh',
-  name: 'Wave Mesh',
-  description: 'Perspective wireframe ocean grid',
-  effects: [
-    { blockId: 'wave-mesh' },
-    { blockId: 'chromatic-aberration' },
-    { blockId: 'vignette' },
-  ],
-  paramOverrides: {
-    'wave-mesh.gridSize': 20,
-    'wave-mesh.perspective': 0.6,
-    'wave-mesh.waveFreq': 4.0,
-    'wave-mesh.waveAmp': 0.15,
-    'wave-mesh.waveSpeed': 0.12,
-    'wave-mesh.lineWidth': 0.015,
-    'chromatic-aberration.amount': 0.01,
-    'vignette.strength': 0.45,
-    'vignette.radius': 0.65,
-  },
-  colors: ['#020810', '#0ea5e9', '#e0f2fe'],
-  colorStops: [0.0, 0.4, 1.0],
-  palettes: [
-    { id: 'default', name: 'Ocean Grid', colors: ['#020810', '#0ea5e9', '#e0f2fe'], colorStops: [0.0, 0.4, 1.0] },
-    { id: 'neon', name: 'Neon', colors: ['#050005', '#e879f9', '#fdf4ff'], colorStops: [0.0, 0.4, 1.0] },
-    { id: 'emerald', name: 'Emerald', colors: ['#020a05', '#10b981', '#d1fae5'], colorStops: [0.0, 0.4, 1.0] },
-  ],
-};
-
-export const ripplesPreset: Preset = {
-  id: 'ripples',
-  name: 'Ripples',
-  description: 'Interfering concentric wave sources',
-  effects: [
-    { blockId: 'interference-rings' },
-    { blockId: 'chromatic-aberration' },
-    { blockId: 'vignette' },
-    { blockId: 'film-grain' },
-  ],
-  paramOverrides: {
-    'interference-rings.sources': 4,
-    'interference-rings.frequency': 20,
-    'interference-rings.speed': 0.15,
-    'interference-rings.damping': 1.5,
-    'interference-rings.lineWidth': 0.06,
-    'interference-rings.glow': 0.4,
-    'chromatic-aberration.amount': 0.012,
-    'vignette.strength': 0.4,
-    'vignette.radius': 0.7,
-    'film-grain.intensity': 0.03,
-  },
-  colors: ['#05050a', '#7c3aed', '#c4b5fd', '#f5f3ff'],
-  colorStops: [0.0, 0.3, 0.65, 1.0],
-  palettes: [
-    { id: 'default', name: 'Violet', colors: ['#05050a', '#7c3aed', '#c4b5fd', '#f5f3ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-    { id: 'infrared', name: 'Infrared', colors: ['#0a0000', '#dc2626', '#fb923c', '#fef9c3'], colorStops: [0.0, 0.3, 0.6, 1.0] },
-    { id: 'arctic', name: 'Arctic', colors: ['#020617', '#0284c7', '#bae6fd', '#f0f9ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-  ],
-};
-
 export const hexLatticePreset: Preset = {
   id: 'hex-lattice',
   name: 'Hex Lattice',
@@ -428,7 +354,6 @@ export const hexLatticePreset: Preset = {
   effects: [
     { blockId: 'hex-lattice' },
     { blockId: 'vignette' },
-    { blockId: 'film-grain' },
   ],
   paramOverrides: {
     'hex-lattice.density': 12,
@@ -441,7 +366,6 @@ export const hexLatticePreset: Preset = {
     'hex-lattice.accentEnabled': 0,
     'vignette.strength': 0.5,
     'vignette.radius': 0.6,
-    'film-grain.intensity': 0.04,
   },
   colors: ['#0a0a0f', '#c4b5fd'],
   palettes: [
@@ -451,11 +375,78 @@ export const hexLatticePreset: Preset = {
   ],
 };
 
+export const topoPreset: Preset = {
+  id: 'topo',
+  name: 'Topo',
+  description: 'Particle landscape with terrain contours and scan rings',
+  effects: [
+    { blockId: 'terrain-field' },
+    { blockId: 'vignette' },
+    { blockId: 'ascii' },
+  ],
+  paramOverrides: {
+    'terrain-field.density': 37,
+    'terrain-field.perspective': 0.79,
+    'terrain-field.dotSize': 0.21,
+    'terrain-field.elevation': 0.74,
+    'terrain-field.scale': 4.37,
+    'terrain-field.drift': 0.08,
+    'terrain-field.ringFreq': 14,
+    'terrain-field.ringWidth': 0.28,
+    'vignette.strength': 0.5,
+    'vignette.radius': 0.6,
+    'ascii.charset': 0,
+    'ascii.font': 2,
+    'ascii.cellSize': 17,
+    'ascii.threshold': 0.1,
+    'ascii.intensity': 0.47,
+    'ascii.padding': 0.42,
+    'ascii.invert': 0,
+  },
+  colors: ['#020a0f', '#006f8e', '#c9ffc7'],
+  colorStops: [0.0, 0.29, 1.0],
+  palettes: [
+    { id: 'default', name: 'Hologram', colors: ['#020a0f', '#006f8e', '#c9ffc7'], colorStops: [0.0, 0.29, 1.0] },
+    { id: 'ocean', name: 'Bathymetry', colors: ['#020814', '#0c4a6e', '#0ea5e9', '#67e8f9', '#ecfeff'], colorStops: [0.0, 0.25, 0.5, 0.75, 1.0] },
+    { id: 'infrared', name: 'Thermal', colors: ['#050005', '#7f1d1d', '#dc2626', '#fb923c', '#fefce8'], colorStops: [0.0, 0.2, 0.45, 0.7, 1.0] },
+  ],
+};
+
+export const godheadPreset: Preset = {
+  id: '8bit-godhead',
+  name: '8-Bit Godhead',
+  description: 'Pixelated kaleidoscopic Chladni pattern',
+  effects: [
+    { blockId: 'pixelate' },
+    { blockId: 'kaleidoscope' },
+    { blockId: 'chladni' },
+  ],
+  paramOverrides: {
+    'pixelate.size': 15,
+    'kaleidoscope.segments': 6,
+    'kaleidoscope.rotation': 0,
+    'chladni.modeA': 6.72,
+    'chladni.modeB': 7.57,
+    'chladni.morph': 0.45,
+    'chladni.lineWidth': 0.04,
+    'chladni.glow': 0.49,
+    'chladni.layers': 1,
+  },
+  colors: ['#040210', '#6439ed', '#1fd5f0', '#e6fae9'],
+  colorStops: [0.0, 0.3, 0.6, 1.0],
+  palettes: [
+    { id: 'default', name: 'Cosmic', colors: ['#040210', '#6439ed', '#1fd5f0', '#e6fae9'], colorStops: [0.0, 0.3, 0.6, 1.0] },
+    { id: 'fire', name: 'Fire', colors: ['#0a0200', '#b91c1c', '#f97316', '#fef3c7'], colorStops: [0.0, 0.3, 0.6, 1.0] },
+    { id: 'mono', name: 'Mono', colors: ['#050505', '#525252', '#d4d4d4', '#fafafa'], colorStops: [0.0, 0.3, 0.6, 1.0] },
+  ],
+};
+
 export const presets: Preset[] = [
   blankPreset, swirlPreset, glowPreset,
   interferencePreset, gemPreset, deepPreset, signalPreset,
   latticePreset, poolPreset, miragePreset, resonancePreset,
-  moirePreset, starfieldPreset, waveMeshPreset, ripplesPreset, hexLatticePreset,
+  moirePreset, starfieldPreset, hexLatticePreset, topoPreset,
+  godheadPreset,
 ];
 
 export function getPreset(id: string): Preset | undefined {
