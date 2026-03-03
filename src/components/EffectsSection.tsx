@@ -3,7 +3,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react'
 import { useStore } from '../store';
 import { getMotionValues } from '../hooks/useMotionTuning';
 import { getEffect, getEffectsByCategory } from '../effects/index';
-import { generateInstanceId } from '../composer';
+import { generateInstanceId, createAlphaParam } from '../composer';
 import { SidebarSection } from './SidebarSection';
 import { ParamControls } from './ParamControls';
 import type { ActiveEffect, EffectBlock, ShaderParam, UniformValue } from '../types';
@@ -70,14 +70,12 @@ export function EffectsSection() {
     for (const ae of activeEffects) {
       const block = getEffect(ae.blockId);
       if (!block) continue;
-      map.set(
-        ae.instanceId,
-        block.params.map((p) => ({
-          ...p,
-          id: `${ae.instanceId}_${p.id}`,
-          uniformName: `u_${ae.instanceId}_${p.id}`,
-        })),
-      );
+      const blockParams = block.params.map((p) => ({
+        ...p,
+        id: `${ae.instanceId}_${p.id}`,
+        uniformName: `u_${ae.instanceId}_${p.id}`,
+      }));
+      map.set(ae.instanceId, [createAlphaParam(ae.instanceId), ...blockParams]);
     }
     return map;
   }, [activeEffects]);
@@ -126,6 +124,7 @@ export function EffectsSection() {
       effects.splice(insertIndex, 0, newEffect);
 
       const pv = { ...state.paramValues };
+      pv[`${instanceId}_alpha`] = 1.0;
       for (const p of block.params) {
         pv[`${instanceId}_${p.id}`] = p.defaultValue;
       }

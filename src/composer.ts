@@ -66,24 +66,32 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, c
       const glslType = paramTypeToGlsl(param.type);
       uniformDeclarations.push(`uniform ${glslType} ${uniformName};`);
     }
+
+    // Synthetic alpha (opacity) param
+    const alphaParam = createAlphaParam(effect.instanceId);
+    allParams.push(alphaParam);
+    uniformDeclarations.push(`uniform float ${alphaParam.uniformName};`);
   }
 
   // Build snippet sections
-  const uvTransformSnippets: string[] = [];
-  const postSnippets: string[] = [];
+  interface AlphaSnippet { snippet: string; alphaUniform: string; }
+  const uvTransformSnippets: AlphaSnippet[] = [];
+  const postSnippets: AlphaSnippet[] = [];
 
   interface GeneratorLayer {
     snippet: string;
     postMixSnippet: string | null;
+    alphaUniform: string;
   }
   const generators: GeneratorLayer[] = [];
 
   for (const { effect, block } of enabledEffects) {
     const body = replaceParams(block.glslBody, effect.instanceId, block.params);
+    const alphaUniform = `u_${effect.instanceId}_alpha`;
 
     switch (block.category) {
       case 'uv-transform':
-        uvTransformSnippets.push(`  // [${block.name}]\n  ${indent(body)}`);
+        uvTransformSnippets.push({ snippet: `  // [${block.name}]\n  ${indent(body)}`, alphaUniform });
         break;
       case 'generator':
         generators.push({
@@ -91,10 +99,11 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, c
           postMixSnippet: block.postMixGlsl
             ? `  // [${block.name} post-mix]\n  ${indent(replaceParams(block.postMixGlsl, effect.instanceId, block.params))}`
             : null,
+          alphaUniform,
         });
         break;
       case 'post':
-        postSnippets.push(`  // [${block.name}]\n  ${indent(body)}`);
+        postSnippets.push({ snippet: `  // [${block.name}]\n  ${indent(body)}`, alphaUniform });
         break;
     }
   }
@@ -142,7 +151,14 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, c
 
   if (uvTransformSnippets.length > 0) {
     lines.push('');
-    for (const s of uvTransformSnippets) lines.push(s);
+    for (let i = 0; i < uvTransformSnippets.length; i++) {
+      const { snippet, alphaUniform } = uvTransformSnippets[i];
+      lines.push(`  vec2 _preUv${i} = uv;`);
+      lines.push(`  vec2 _preSt${i} = st;`);
+      lines.push(snippet);
+      lines.push(`  uv = mix(_preUv${i}, uv, ${alphaUniform});`);
+      lines.push(`  st = mix(_preSt${i}, st, ${alphaUniform});`);
+    }
   }
 
   if (generators.length > 0) {
@@ -150,7 +166,7 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, c
     lines.push('');
     lines.push(generators[0].snippet);
     lines.push('');
-    lines.push('  color = colorRamp(mixFactor);');
+    lines.push(`  color = colorRamp(mixFactor) * ${generators[0].alphaUniform};`);
     if (generators[0].postMixSnippet) {
       lines.push('');
       lines.push(generators[0].postMixSnippet);
@@ -165,7 +181,7 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, c
       lines.push(generators[i].snippet);
       lines.push('');
       lines.push(`  float _layerBlend${i} = smoothstep(0.0, 1.0, abs(mixFactor - 0.5) * 2.0);`);
-      lines.push(`  color = mix(_prevColor${i}, colorRamp(mixFactor), _layerBlend${i});`);
+      lines.push(`  color = mix(_prevColor${i}, colorRamp(mixFactor), _layerBlend${i} * ${generators[i].alphaUniform});`);
       if (generators[i].postMixSnippet) {
         lines.push('');
         lines.push(generators[i].postMixSnippet!);
@@ -178,7 +194,12 @@ export function compose(activeEffects: ActiveEffect[], colorCount: number = 0, c
 
   if (postSnippets.length > 0) {
     lines.push('');
-    for (const s of postSnippets) lines.push(s);
+    for (let i = 0; i < postSnippets.length; i++) {
+      const { snippet, alphaUniform } = postSnippets[i];
+      lines.push(`  vec3 _prePost${i} = color;`);
+      lines.push(snippet);
+      lines.push(`  color = mix(_prePost${i}, color, ${alphaUniform});`);
+    }
   }
 
   lines.push('');
@@ -249,6 +270,22 @@ function generateColorRamp(colorCount: number): string {
   bodyLines.push(`  return c;`);
   bodyLines.push(`}`);
   return bodyLines.join('\n');
+}
+
+/** Create the synthetic per-effect alpha (opacity) param. */
+export function createAlphaParam(instanceId: string): ShaderParam {
+  return {
+    id: `${instanceId}_alpha`,
+    label: 'Opacity',
+    type: 'float',
+    defaultValue: 1.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    uniformName: `u_${instanceId}_alpha`,
+    glslDefault: '1.0',
+    group: 'blend',
+  };
 }
 
 /** Generate a short random instance ID (6 chars). */
