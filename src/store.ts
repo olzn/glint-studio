@@ -62,6 +62,7 @@ function buildInitialState(): AppState {
       const overrideKey = `${blockId}.${param.id}`;
       defaultParams[scopedId] = defaultPreset.paramOverrides[overrideKey] ?? param.defaultValue;
     }
+    defaultParams[`${instanceId}_alpha`] = 1.0;
   }
 
   // Apply Glow preset overrides

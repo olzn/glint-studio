@@ -106,6 +106,7 @@ export function PresetsPanel() {
           const overrideKey = `${blockId}.${param.id}`;
           paramValues[scopedId] = preset.paramOverrides[overrideKey] ?? param.defaultValue;
         }
+        paramValues[`${instanceId}_alpha`] = 1.0;
       }
 
       const colors = preset.colors ?? [];

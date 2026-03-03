@@ -96,70 +96,35 @@ export const interferencePreset: Preset = {
   ],
 };
 
-export const gemPreset: Preset = {
-  id: 'gem',
-  name: 'Gem',
-  description: 'Light refracting through a cut gemstone',
+export const lotusPreset: Preset = {
+  id: 'lotus',
+  name: 'Lotus',
+  description: 'Kaleidoscopic Chladni patterns with spiraling petals',
   effects: [
     { blockId: 'kaleidoscope' },
-    { blockId: 'caustics' },
+    { blockId: 'chladni' },
+    { blockId: 'spiral' },
     { blockId: 'vignette' },
   ],
   paramOverrides: {
-    'kaleidoscope.segments': 6,
+    'kaleidoscope.segments': 8,
     'kaleidoscope.rotation': 0,
-    'caustics.scale': 4.0,
-    'caustics.speed': 0.3,
-    'caustics.intensity': 2.2,
-    'caustics.sharpness': 12.0,
-    'caustics.jitter': 0.85,
-    'caustics.distortion': 0.3,
+    'chladni.modeA': 4,
+    'chladni.modeB': 7,
+    'chladni.morph': 0.26,
+    'chladni.lineWidth': 0.22,
+    'chladni.glow': 0.63,
+    'chladni.layers': 0,
+    'spiral.arms': 10,
+    'spiral.tightness': 14.03,
+    'spiral.speed': 0.5,
+    'spiral.lineWidth': 0.06,
+    'spiral.glow': 0.4,
     'vignette.strength': 0.45,
     'vignette.radius': 0.65,
   },
-  colors: ['#0a0015', '#7c3aed', '#e879f9', '#fdf4ff'],
-  colorStops: [0.0, 0.3, 0.65, 1.0],
-  palettes: [
-    { id: 'default', name: 'Amethyst', colors: ['#0a0015', '#7c3aed', '#e879f9', '#fdf4ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-    { id: 'ruby', name: 'Ruby', colors: ['#0a0005', '#be123c', '#fb7185', '#fff1f2'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-    { id: 'sapphire', name: 'Sapphire', colors: ['#000510', '#1d4ed8', '#60a5fa', '#eff6ff'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-    { id: 'emerald', name: 'Emerald', colors: ['#000a05', '#059669', '#6ee7b7', '#ecfdf5'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-  ],
-};
-
-export const deepPreset: Preset = {
-  id: 'deep',
-  name: 'Deep',
-  description: 'Underwater infinity mirror with caustic light',
-  effects: [
-    { blockId: 'dot-lattice-3d' },
-    { blockId: 'caustics' },
-    { blockId: 'vignette' },
-  ],
-  paramOverrides: {
-    'dot-lattice-3d.density': 15,
-    'dot-lattice-3d.perspective': 0.6,
-    'dot-lattice-3d.dotSize': 0.05,
-    'dot-lattice-3d.waveFreq': 6.0,
-    'dot-lattice-3d.waveSpeed': 0.2,
-    'dot-lattice-3d.twinkle': 0.4,
-    'dot-lattice-3d.accentEnabled': 0,
-    'caustics.scale': 4.0,
-    'caustics.speed': 0.3,
-    'caustics.intensity': 1.2,
-    'caustics.sharpness': 6.0,
-    'caustics.jitter': 0.9,
-    'caustics.distortion': 0.4,
-    'vignette.strength': 0.5,
-    'vignette.radius': 0.6,
-  },
-  colors: ['#020814', '#0c4a6e', '#22d3ee', '#ecfeff'],
-  colorStops: [0.0, 0.3, 0.7, 1.0],
-  palettes: [
-    { id: 'default', name: 'Abyss', colors: ['#020814', '#0c4a6e', '#22d3ee', '#ecfeff'], colorStops: [0.0, 0.3, 0.7, 1.0] },
-    { id: 'bioluminescent', name: 'Bioluminescent', colors: ['#020a05', '#065f46', '#34d399', '#d1fae5'], colorStops: [0.0, 0.3, 0.65, 1.0] },
-    { id: 'lava', name: 'Magma', colors: ['#0a0000', '#7f1d1d', '#f97316', '#fef3c7'], colorStops: [0.0, 0.25, 0.6, 1.0] },
-  ],
+  colors: ['#000012', '#17f0ff', '#1589b6', '#c7ffe3'],
+  colorStops: [0.0, 0.3, 0.6, 1.0],
 };
 
 export const signalPreset: Preset = {
@@ -386,7 +351,7 @@ export const godheadPreset: Preset = {
 
 export const presets: Preset[] = [
   blankPreset, swirlPreset, glowPreset,
-  interferencePreset, gemPreset, deepPreset, signalPreset,
+  interferencePreset, lotusPreset, signalPreset,
   latticePreset, poolPreset, miragePreset,
   warpPreset, starfieldPreset, topoPreset,
   godheadPreset,
