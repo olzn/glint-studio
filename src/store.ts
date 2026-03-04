@@ -80,6 +80,7 @@ function buildInitialState(): AppState {
     colors: defaultPreset.colors ?? [],
     colorStops: defaultPreset.colorStops ?? equalStops((defaultPreset.colors ?? []).length),
     compiledFragmentSource: '',
+    sidebarOpen: true,
     editorOpen: false,
     editorHeight: 250,
     playing: true,

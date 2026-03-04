@@ -1,4 +1,5 @@
 import { useStore } from '../store';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { CodeEditor } from './CodeEditor';
 
 interface PreviewProps {
@@ -8,6 +9,7 @@ interface PreviewProps {
 export function Preview({ containerRef }: PreviewProps) {
   const compileErrors = useStore((s) => s.compileErrors);
   const editorOpen = useStore((s) => s.editorOpen);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   return (
     <div className="main-area">
@@ -23,7 +25,7 @@ export function Preview({ containerRef }: PreviewProps) {
         )}
       </div>
 
-      {editorOpen && <CodeEditor />}
+      {editorOpen && !isMobile && <CodeEditor />}
     </div>
   );
 }

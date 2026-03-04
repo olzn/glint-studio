@@ -26,13 +26,16 @@ export function ColorPickerPopover({
     if (!swatchRef.current) return;
     const rect = swatchRef.current.getBoundingClientRect();
     const popoverHeight = 220;
+    const popoverWidth = 218;
     const gap = 6;
     const spaceBelow = window.innerHeight - rect.bottom - gap;
     const flip = spaceBelow < popoverHeight && rect.top - gap >= popoverHeight;
     setFlipped(flip);
+    // Clamp left so the popover doesn't overflow the viewport
+    const maxLeft = window.innerWidth - popoverWidth - gap;
     setPos({
       top: flip ? rect.top - popoverHeight - gap : rect.bottom + gap,
-      left: rect.left,
+      left: Math.max(gap, Math.min(rect.left, maxLeft)),
     });
   }, []);
 
