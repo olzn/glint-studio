@@ -37,6 +37,14 @@ export function useKeyboardShortcuts(rendererRef: React.RefObject<Renderer | nul
         return;
       }
 
+      // Toggle sidebar
+      if (mod && e.key === 'b') {
+        e.preventDefault();
+        const { sidebarOpen, set } = useStore.getState();
+        set({ sidebarOpen: !sidebarOpen });
+        return;
+      }
+
       // Toggle code editor
       if (mod && e.key === 'e') {
         e.preventDefault();

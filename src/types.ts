@@ -73,6 +73,7 @@ export interface AppState {
   colors: string[];
   colorStops: number[];
   compiledFragmentSource: string;
+  sidebarOpen: boolean;
   editorOpen: boolean;
   editorHeight: number;
   playing: boolean;

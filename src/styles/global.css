@@ -116,6 +116,16 @@ html, body {
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
   grid-template-rows: var(--header-height) 1fr;
+  transition: grid-template-columns 0.25s ease;
+}
+
+#app.sidebar-closed {
+  grid-template-columns: 0px 1fr;
+}
+
+#app.sidebar-closed .sidebar {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════ */
@@ -220,6 +230,7 @@ html, body {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  transition: opacity 0.2s ease;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -1492,4 +1503,185 @@ input[type="range"]::-moz-range-thumb {
   .effect-catalog-item:hover {
     background: var(--bg-hover);
   }
+}
+
+/* ═══════════════════════════════════════════════ */
+/*  Sidebar toolbar (relocated header controls)    */
+/* ═══════════════════════════════════════════════ */
+
+.sidebar-toolbar {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════ */
+/*  Sidebar backdrop (mobile overlay)              */
+/* ═══════════════════════════════════════════════ */
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════ */
+/*  Mobile responsive                              */
+/* ═══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* --- Grid: single column, sidebar detached from grid --- */
+
+  #app {
+    grid-template-columns: 1fr;
+    transition: none;
+  }
+
+  #app.sidebar-closed {
+    grid-template-columns: 1fr;
+  }
+
+  .main-area {
+    grid-column: 1;
+  }
+
+  /* --- Sidebar: fixed slide-over overlay --- */
+
+  .sidebar {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    bottom: 0;
+    width: min(var(--sidebar-width), 85vw);
+    z-index: 30;
+    transform: translateX(0);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    opacity: 1;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #app.sidebar-closed .sidebar {
+    transform: translateX(-100%);
+    opacity: 1;
+    pointer-events: none;
+    box-shadow: none;
+  }
+
+  /* --- Backdrop --- */
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  /* --- Sidebar toolbar: sticky relocated controls --- */
+
+  .sidebar-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .sidebar-toolbar-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 var(--space-1);
+    flex-shrink: 0;
+  }
+
+  .sidebar-toolbar .time-controls {
+    gap: 2px;
+  }
+
+  /* --- Touch targets: minimum 44px hit areas --- */
+
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 16px;
+  }
+
+  .btn-icon {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .effect-drag-handle,
+  .color-drag-handle {
+    width: 28px;
+    height: 44px;
+    margin: -8px 0;
+  }
+
+  .effect-toggle {
+    width: 36px;
+    height: 20px;
+    min-width: 36px;
+    min-height: 20px;
+  }
+
+  .effect-toggle::after {
+    width: 16px;
+    height: 16px;
+  }
+
+  .effect-toggle:checked::after {
+    transform: translateX(16px);
+  }
+
+  .effect-item-header {
+    min-height: 44px;
+  }
+
+  .effect-remove-btn {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .color-remove-btn {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .color-row {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .category-add-btn {
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+
+  .gradient-handle {
+    width: 18px;
+    height: 18px;
+    top: -1px;
+  }
+
+  /* --- Header: tighter on narrow viewports --- */
+
+  .header {
+    padding: 0 var(--space-3);
+  }
+
+  .header-right {
+    gap: 2px;
+  }
+
+  .header-center {
+    gap: 2px;
+  }
+
 }

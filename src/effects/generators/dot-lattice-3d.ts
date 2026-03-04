@@ -38,7 +38,7 @@ export const dotLattice3dEffect: EffectBlock = {
       type: 'float',
       defaultValue: 0.04,
       min: 0.01,
-      max: 0.12,
+      max: 0.2,
       step: 0.005,
       uniformName: '',
       glslDefault: '0.04',
