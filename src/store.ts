@@ -48,7 +48,7 @@ function loadAutosave(): Partial<AppState> | null {
 }
 
 function buildInitialState(): AppState {
-  const defaultPreset = getPreset('glow')!;
+  const defaultPreset = getPreset('blank')!;
   const defaultEffects: ActiveEffect[] = [];
   const defaultParams: Record<string, UniformValue> = {};
 
@@ -63,13 +63,6 @@ function buildInitialState(): AppState {
       defaultParams[scopedId] = defaultPreset.paramOverrides[overrideKey] ?? param.defaultValue;
     }
     defaultParams[`${instanceId}_alpha`] = 1.0;
-  }
-
-  // Apply Glow preset overrides
-  for (const ae of defaultEffects) {
-    if (ae.blockId === 'glow-waves') {
-      defaultParams[`${ae.instanceId}_waveSpeed`] = 1.2;
-    }
   }
 
   const state: AppState = {

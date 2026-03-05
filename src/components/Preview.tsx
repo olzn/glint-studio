@@ -9,6 +9,7 @@ interface PreviewProps {
 export function Preview({ containerRef }: PreviewProps) {
   const compileErrors = useStore((s) => s.compileErrors);
   const editorOpen = useStore((s) => s.editorOpen);
+  const activeEffects = useStore((s) => s.activeEffects);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   return (
@@ -21,6 +22,17 @@ export function Preview({ containerRef }: PreviewProps) {
                 {e.line ? `Line ${e.line}: ${e.message}` : e.message}
               </div>
             ))}
+          </div>
+        )}
+        {activeEffects.length === 0 && (
+          <div className="preview-onboarding">
+            <span className="preview-onboarding-icon">&#9670;</span>
+            <p className="preview-onboarding-heading">Welcome to Glint Studio</p>
+            <p className="preview-onboarding-text">
+              Pick a preset from the sidebar to get started,
+              <br />
+              or add effects and colors to build your own.
+            </p>
           </div>
         )}
       </div>
